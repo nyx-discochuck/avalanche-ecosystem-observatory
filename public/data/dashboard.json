@@ -33,7 +33,7 @@
     "kpis": {
       "avaxMarketCapUsd": null,
       "stablecoinMarketCapUsd": 0,
-      "tokenizedAssetValueUsd": 799804026.3494236,
+      "tokenizedAssetValueUsd": null,
       "rwaAdapterTvlUsd": 0,
       "protocolTvlUsd": null
     },
@@ -1575,34 +1575,29 @@
     "generatedAt": "2026-09-18T13:50:00.410Z",
     "kpis": {
       "verifiedTokenContracts": 4,
-      "trackedValueUsd": 799804026.3494236,
-      "verifiedContractValueUsd": 799804026.3494236,
-      "rwaAdapterTvlUsd": null,
+      "trackedValueUsd": null,
+      "verifiedContractValueUsd": null,
+      "rwaAdapterTvlUsd": 0,
       "verifiedHolders": 34,
-      "valuedAssets": 4,
+      "valuedAssets": 0,
       "holderAssets": 4,
       "trackedAssets": 4,
-      "valueAvailability": "available",
+      "valueAvailability": "unavailable",
       "holderAvailability": "available",
       "contractCoverage": "4/4",
-      "valueCoverage": "4/4",
+      "valueCoverage": "0/4",
       "holderCoverage": "4/4",
-      "includedAssetIds": [
+      "includedAssetIds": [],
+      "excludedAssetIds": [
         "buidl",
         "vbill",
         "acred",
         "secz"
       ],
-      "excludedAssetIds": [],
-      "aggregateStatus": "complete",
+      "aggregateStatus": "unavailable",
       "aggregateLabel": "Exact-contract value",
-      "aggregateComplete": true,
-      "eligibleAssetIds": [
-        "buidl",
-        "vbill",
-        "acred",
-        "secz"
-      ]
+      "aggregateComplete": false,
+      "eligibleAssetIds": []
     },
     "valueHistory": [],
     "rwaAdapterValueHistory": [],
@@ -1636,7 +1631,7 @@
           "totalSupply": "fetch failed; fetch failed",
           "holders": "fetch failed"
         },
-        "valueUsd": 564433551.94,
+        "valueUsd": null,
         "fieldStatus": {
           "totalSupply": {
             "availability": "available",
@@ -1665,15 +1660,15 @@
             "retainedLastGood": false
           },
           "valueUsd": {
-            "availability": "available",
+            "availability": "unavailable",
             "observedAt": "2026-09-18T04:10:12.000Z",
-            "error": null,
+            "error": "The committed fallback snapshot does not claim a current valuation.",
             "retainedLastGood": false
           },
           "valuationUsd": {
-            "availability": "available",
+            "availability": "unavailable",
             "observedAt": "2026-09-18T04:10:12.000Z",
-            "error": null,
+            "error": "The committed fallback snapshot does not claim a current valuation.",
             "retainedLastGood": false
           }
         },
@@ -1976,7 +1971,7 @@
         ],
         "totalSupplyRaw": "564433551940000",
         "totalSupplyExact": "564433551.94",
-        "valueUsdExact": "564433551.94",
+        "valueUsdExact": null,
         "valuationUsd": 1,
         "valuationUsdExact": "1",
         "valuationAnswerRaw": "100000000",
@@ -2029,13 +2024,13 @@
           }
         ],
         "valueStatus": {
-          "value": 564433551.94,
+          "value": null,
           "observedAt": "2026-09-18T04:10:12.000Z",
           "source": "Avalanche token totalSupplyRaw × RedStone fundamental USD/share",
-          "availability": "available",
-          "error": null,
+          "availability": "unavailable",
+          "error": "The committed fallback snapshot does not claim a current valuation.",
           "retainedLastGood": false,
-          "valueExact": "564433551.94",
+          "valueExact": null,
           "supplyObservedAt": "2026-09-18T13:49:23.000Z",
           "valuationObservedAt": "2026-09-18T04:10:12.000Z",
           "sourceBlock": {
@@ -2206,7 +2201,7 @@
           "totalSupply": "fetch failed; fetch failed",
           "holders": "fetch failed"
         },
-        "valueUsd": 704808.12,
+        "valueUsd": null,
         "fieldStatus": {
           "totalSupply": {
             "availability": "available",
@@ -2235,15 +2230,15 @@
             "retainedLastGood": false
           },
           "valueUsd": {
-            "availability": "available",
+            "availability": "unavailable",
             "observedAt": "2026-09-18T04:10:12.000Z",
-            "error": null,
+            "error": "The committed fallback snapshot does not claim a current valuation.",
             "retainedLastGood": false
           },
           "valuationUsd": {
-            "availability": "available",
+            "availability": "unavailable",
             "observedAt": "2026-09-18T04:10:12.000Z",
-            "error": null,
+            "error": "The committed fallback snapshot does not claim a current valuation.",
             "retainedLastGood": false
           }
         },
@@ -2546,7 +2541,7 @@
         ],
         "totalSupplyRaw": "704808120000",
         "totalSupplyExact": "704808.12",
-        "valueUsdExact": "704808.12",
+        "valueUsdExact": null,
         "valuationUsd": 1,
         "valuationUsdExact": "1",
         "valuationAnswerRaw": "100000000",
@@ -2599,13 +2594,13 @@
           }
         ],
         "valueStatus": {
-          "value": 704808.12,
+          "value": null,
           "observedAt": "2026-09-18T04:10:12.000Z",
           "source": "Avalanche token totalSupplyRaw × RedStone fundamental USD/share",
-          "availability": "available",
-          "error": null,
+          "availability": "unavailable",
+          "error": "The committed fallback snapshot does not claim a current valuation.",
           "retainedLastGood": false,
-          "valueExact": "704808.12",
+          "valueExact": null,
           "supplyObservedAt": "2026-09-18T13:49:23.000Z",
           "valuationObservedAt": "2026-09-18T04:10:12.000Z",
           "sourceBlock": {
@@ -2776,7 +2771,7 @@
           "totalSupply": "fetch failed; fetch failed",
           "holders": "fetch failed"
         },
-        "valueUsd": 4902115.359423689,
+        "valueUsd": null,
         "fieldStatus": {
           "totalSupply": {
             "availability": "available",
@@ -2805,15 +2800,15 @@
             "retainedLastGood": false
           },
           "valueUsd": {
-            "availability": "available",
+            "availability": "unavailable",
             "observedAt": "2026-09-17T21:17:03.000Z",
-            "error": null,
+            "error": "The committed fallback snapshot does not claim a current valuation.",
             "retainedLastGood": false
           },
           "valuationUsd": {
-            "availability": "available",
+            "availability": "unavailable",
             "observedAt": "2026-09-17T21:17:03.000Z",
-            "error": null,
+            "error": "The committed fallback snapshot does not claim a current valuation.",
             "retainedLastGood": false
           }
         },
@@ -3050,7 +3045,7 @@
         ],
         "totalSupplyRaw": "4413846004",
         "totalSupplyExact": "4413.846004",
-        "valueUsdExact": "4902115.3594236888",
+        "valueUsdExact": null,
         "valuationUsd": 1110.6222,
         "valuationUsdExact": "1110.6222",
         "valuationAnswerRaw": "111062220000",
@@ -3078,13 +3073,13 @@
         },
         "supplementalFeeds": [],
         "valueStatus": {
-          "value": 4902115.359423689,
+          "value": null,
           "observedAt": "2026-09-17T21:17:03.000Z",
           "source": "Avalanche token totalSupplyRaw × RedStone fundamental USD/share",
-          "availability": "available",
-          "error": null,
+          "availability": "unavailable",
+          "error": "The committed fallback snapshot does not claim a current valuation.",
           "retainedLastGood": false,
-          "valueExact": "4902115.3594236888",
+          "valueExact": null,
           "supplyObservedAt": "2026-09-18T13:49:23.000Z",
           "valuationObservedAt": "2026-09-17T21:17:03.000Z",
           "sourceBlock": {
@@ -3255,7 +3250,7 @@
           "totalSupply": "fetch failed; fetch failed",
           "holders": "fetch failed"
         },
-        "valueUsd": 229763550.93,
+        "valueUsd": null,
         "fieldStatus": {
           "totalSupply": {
             "availability": "available",
@@ -3284,15 +3279,15 @@
             "retainedLastGood": false
           },
           "valueUsd": {
-            "availability": "available",
+            "availability": "unavailable",
             "observedAt": "2026-09-18T08:15:23.000Z",
-            "error": null,
+            "error": "The committed fallback snapshot does not claim a current valuation.",
             "retainedLastGood": false
           },
           "valuationUsd": {
-            "availability": "available",
+            "availability": "unavailable",
             "observedAt": "2026-09-18T08:15:23.000Z",
-            "error": null,
+            "error": "The committed fallback snapshot does not claim a current valuation.",
             "retainedLastGood": false
           }
         },
@@ -3543,7 +3538,7 @@
         ],
         "totalSupplyRaw": "25729401000000",
         "totalSupplyExact": "25729401",
-        "valueUsdExact": "229763550.93",
+        "valueUsdExact": null,
         "valuationUsd": 8.93,
         "valuationUsdExact": "8.93",
         "valuationAnswerRaw": "893000000",
@@ -3571,13 +3566,13 @@
         },
         "supplementalFeeds": [],
         "valueStatus": {
-          "value": 229763550.93,
+          "value": null,
           "observedAt": "2026-09-18T08:15:23.000Z",
           "source": "Avalanche token totalSupplyRaw × RedStone end-of-day equity USD/share (not NAV)",
-          "availability": "available",
-          "error": null,
+          "availability": "unavailable",
+          "error": "The committed fallback snapshot does not claim a current valuation.",
           "retainedLastGood": false,
-          "valueExact": "229763550.93",
+          "valueExact": null,
           "supplyObservedAt": "2026-09-18T13:49:23.000Z",
           "valuationObservedAt": "2026-09-18T08:15:23.000Z",
           "sourceBlock": {

@@ -197,7 +197,11 @@ async function handleApi(request, response, pathname) {
       const dashboard = await readDashboard();
       const ageSeconds = Math.max(0, (Date.now() - Date.parse(dashboard.generatedAt)) / 1000);
       const degraded = dashboard.metadata?.freshness !== 'healthy';
-      sendJson(request, response, degraded ? 207 : 200, {
+      // A readable cached snapshot is a successful health response even when
+      // its payload reports degraded upstream freshness. This keeps offline
+      // snapshot deployments usable while preserving the degraded signal in
+      // the response body.
+      sendJson(request, response, 200, {
         status: degraded ? 'degraded' : 'ok',
         generatedAt: dashboard.generatedAt,
         ageSeconds: Math.round(ageSeconds),
