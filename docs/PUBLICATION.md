@@ -10,7 +10,7 @@ This file records the requirements and verification state for the isolated publi
 - [x] README documents the optional separately operated Avalanche Gateway and snapshot-only operation.
 - [ ] `npm run check`, `npm test`, and `npm run build` pass from a guarded clean install. `npm run check` passes; guarded dependency installation is currently blocked by the execution environment's failed package fetch, so tests/build cannot yet load DuckDB/Vite.
 - [ ] Independent Git repository has `main` as its default local branch and a clean committed tree.
-- [ ] GitHub repository `avalanche-ecosystem-observatory` exists under the authenticated account, is public, and contains the local `main` HEAD. GitHub API access is currently blocked by the environment's CONNECT tunnel (HTTP 403), before authentication can be verified.
+- [ ] GitHub repository `avalanche-ecosystem-observatory` exists under the authenticated account, is public, and contains the local `main` HEAD. Repository creation succeeded, but Git smart-HTTP rejected the authenticated push with HTTP 403 despite the API reporting `push: true`; the remote remains empty.
 - [ ] Anonymous GitHub API/HTTP verification confirms public visibility and expected files.
 
 Open blockers must remain checked off only when command evidence exists. Current publication attempts and any environmental blocker are recorded in the final commit history and workflow evidence.
