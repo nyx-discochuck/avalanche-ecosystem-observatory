@@ -1,0 +1,539 @@
+{
+  "schema": "couchdicks.avalanche.metric-catalog.v1",
+  "rules": {
+    "headlineKpis": "Latest complete observation; the global timeframe affects comparison windows and charts, not the observation date.",
+    "historicalPricing": "Use observation-date USD values from the source. Current prices are never retroactively applied without an explicit label.",
+    "missingValues": "Null means unavailable or unsupported. Null values are never converted to zero.",
+    "partialDay": "Current UTC day is marked partial and excluded from period-over-period comparisons."
+  },
+  "metrics": [
+    {
+      "id": "protocol_tvl",
+      "label": "Protocol TVL",
+      "unit": "USD",
+      "definition": "Value locked in Avalanche protocols tracked by DeFiLlama, excluding centralized exchanges and double-counted borrowed balances.",
+      "formula": "DeFiLlama Avalanche chain TVL at each daily observation.",
+      "sources": [
+        "defillama-tvl"
+      ],
+      "cadence": "daily",
+      "coverageStart": "2021-02-02",
+      "confidence": "medium",
+      "limitations": "Protocol adapter methodology and coverage can change retroactively."
+    },
+    {
+      "id": "protocol_adapter_exposure",
+      "label": "Gross Protocol-Adapter TVL",
+      "unit": "USD",
+      "definition": "Current Avalanche TVL reported by individual protocol adapters, grouped for non-additive comparison.",
+      "formula": "Group positive Avalanche protocol-adapter TVL by category. Display each category independently beside authoritative chain TVL; never sum the groups or interpret them as chain-TVL shares.",
+      "sources": [
+        "defillama-tvl"
+      ],
+      "cadence": "daily",
+      "coverageStart": "protocol dependent",
+      "confidence": "medium",
+      "limitations": "Vaults, allocators, wrappers, RWA structures, and their underlying protocols can represent overlapping capital."
+    },
+    {
+      "id": "stablecoin_market_cap",
+      "label": "Stablecoin Market Cap",
+      "unit": "USD",
+      "definition": "USD value of ordinary stablecoins circulating on Avalanche.",
+      "formula": "Sum totalCirculatingUSD; tokenized funds such as BUIDL and yield wrappers are excluded.",
+      "sources": [
+        "defillama-stablecoins"
+      ],
+      "cadence": "daily",
+      "coverageStart": "2021-02-03",
+      "confidence": "medium",
+      "limitations": "Supply adapters may lag and bridged representations depend on source classification."
+    },
+    {
+      "id": "tokenized_asset_value",
+      "label": "Tokenized Asset Value",
+      "unit": "USD",
+      "definition": "Current value attributable to the registry-authenticated Avalanche tokenized-asset contracts, excluding ordinary stablecoins.",
+      "formula": "Sum the current Avalanche value for protocol identities mapped one-to-one to verified token contracts; contracts without a defensible current value remain null.",
+      "sources": [
+        "defillama-tvl",
+        "routescan"
+      ],
+      "cadence": "daily",
+      "coverageStart": "source dependent",
+      "confidence": "high",
+      "limitations": "Issuer NAV timing differs; the total excludes broader RWA protocol adapters that are not part of the verified contract set."
+    },
+    {
+      "id": "rwa_adapter_tvl",
+      "label": "Broader RWA Adapter TVL",
+      "unit": "USD",
+      "definition": "Avalanche TVL reported by all positive DeFiLlama protocol adapters categorized as RWA.",
+      "formula": "Sum positive Avalanche chain TVL for RWA protocol adapters and report it separately from verified token-contract value.",
+      "sources": [
+        "defillama-tvl"
+      ],
+      "cadence": "daily",
+      "coverageStart": "protocol dependent",
+      "confidence": "medium",
+      "limitations": "The adapter universe can include vaults, issuers, wrappers, and structures outside the verified contract registry and can overlap economically."
+    },
+    {
+      "id": "daily_transactions",
+      "label": "Daily Transactions",
+      "unit": "transactions",
+      "definition": "Successful and failed user and system transactions included in C-Chain blocks during a UTC day.",
+      "formula": "Count distinct transaction hashes in indexed blocks.",
+      "sources": [
+        "avacache-parquet"
+      ],
+      "cadence": "daily",
+      "coverageStart": "2026-06-24 on this deployment",
+      "confidence": "high",
+      "limitations": "Coverage before the local archive start is not displayed."
+    },
+    {
+      "id": "active_addresses",
+      "label": "Distinct transaction senders (transaction.from)",
+      "unit": "addresses",
+      "definition": "Distinct transaction senders included on C-Chain during a UTC day.",
+      "formula": "count(distinct lower(from_address)); contract recipients are not counted solely for receiving.",
+      "sources": [
+        "avacache-parquet"
+      ],
+      "cadence": "daily",
+      "coverageStart": "2026-06-24 on this deployment",
+      "confidence": "high",
+      "limitations": "Addresses are not deduplicated into users. Avalanche activeSenders may also infer senders from token-transfer logs and is not expected to match this narrower scope."
+    },
+    {
+      "id": "contract_creations",
+      "label": "Top-level contract-creation transactions",
+      "unit": "contracts",
+      "definition": "Included transactions with no destination address.",
+      "formula": "Count transactions where to_address is null or empty.",
+      "sources": [
+        "avacache-parquet"
+      ],
+      "cadence": "daily",
+      "coverageStart": "2026-06-24 on this deployment",
+      "confidence": "high",
+      "limitations": "Internal CREATE, CREATE2, and CREATE3 trace activity is not included; do not compare directly with trace-based totals without normalizing scope."
+    },
+    {
+      "id": "transaction_failure_rate",
+      "label": "Transaction Failure Rate",
+      "unit": "percent",
+      "definition": "Share of included transactions whose receipt status is failed.",
+      "formula": "failed transaction count / transaction count * 100.",
+      "sources": [
+        "avacache-parquet"
+      ],
+      "cadence": "daily",
+      "coverageStart": "2026-06-24 on this deployment",
+      "confidence": "high",
+      "limitations": "Reverted internal calls inside a successful outer transaction are not counted."
+    },
+    {
+      "id": "throughput",
+      "label": "Average Throughput",
+      "unit": "TPS",
+      "definition": "Average included transactions per elapsed UTC day.",
+      "formula": "daily transaction count / 86,400; partial days use elapsed seconds and are labeled partial.",
+      "sources": [
+        "avacache-parquet"
+      ],
+      "cadence": "daily",
+      "coverageStart": "2026-06-24 on this deployment",
+      "confidence": "high",
+      "limitations": "Daily mean is not peak throughput."
+    },
+    {
+      "id": "transaction_fees_burned",
+      "label": "Transaction Fees Burned",
+      "unit": "AVAX and USD",
+      "definition": "C-Chain transaction fees destroyed under Avalanche fee mechanics.",
+      "formula": "sum(gas_used * effective_gas_price); both base and priority portions are burned on C-Chain.",
+      "sources": [
+        "avacache-parquet",
+        "avalanche-docs"
+      ],
+      "cadence": "daily",
+      "coverageStart": "2026-06-24 on this deployment",
+      "confidence": "high",
+      "limitations": "Displayed cumulative totals are coverage-window totals, not lifetime totals."
+    },
+    {
+      "id": "dex_volume",
+      "label": "DEX Volume",
+      "unit": "USD",
+      "definition": "Spot swap volume attributed by protocol adapters on Avalanche.",
+      "formula": "DeFiLlama daily DEX volume; adapters are summed once by protocol.",
+      "sources": [
+        "defillama-dimensions"
+      ],
+      "cadence": "daily",
+      "coverageStart": "2021-02-09",
+      "confidence": "medium",
+      "limitations": "Aggregator routes are excluded when adapters identify them, but protocol adapter coverage is not uniform."
+    },
+    {
+      "id": "amm_liquidity",
+      "label": "Spot DEX adapter TVL proxy",
+      "unit": "USD",
+      "definition": "Positive Avalanche TVL reported by DeFiLlama protocols in its broader Dexs category; this is a proxy, not measured immediately usable AMM liquidity.",
+      "formula": "Sum current Avalanche protocol TVL for registry entries categorized Spot DEX.",
+      "sources": [
+        "defillama-tvl"
+      ],
+      "cadence": "daily",
+      "coverageStart": "protocol dependent",
+      "confidence": "medium",
+      "limitations": "The Dexs category is broader than pure AMMs and protocol TVL may include staking or non-trading balances. The UI discloses the Top 30 visible rows and omitted tail."
+    },
+    {
+      "id": "lending_market_size",
+      "label": "Gross Supplied Assets",
+      "unit": "USD",
+      "definition": "Tracked eligible priced lending claims across Aave V3/V4, BENQI, Euler V2, Silo V2 and V3. Gross supply is distinct from borrowed, liquid cash and secondary DeFiLlama net TVL.",
+      "formula": "Sum only eligible source-backed market fields; Aave V4 hubs once, never additive spokes or allocator vaults. Each field has its own known/eligible coverage.",
+      "sources": [
+        "defillama-yields",
+        "avalanche-public-rpc"
+      ],
+      "cadence": "Gateway materializer every 5 minutes; dashboard consumer every minute; stale after 15 minutes.",
+      "coverageStart": "pool dependent",
+      "confidence": "medium",
+      "limitations": "Not a complete Avalanche lending census. Hidden, deprecated, impaired and nonadditive rows are excluded. Missing prices or fields remain null; partial subtotals are explicitly identified."
+    },
+    {
+      "id": "lending_borrowed",
+      "label": "Total Borrowed",
+      "unit": "USD",
+      "definition": "Explicit outstanding debt for eligible tracked native markets, with field-specific coverage.",
+      "formula": "Sum reported eligible debt, never gross supply minus liquid cash.",
+      "sources": [
+        "defillama-tvl",
+        "avalanche-public-rpc"
+      ],
+      "cadence": "hourly",
+      "coverageStart": "protocol dependent",
+      "confidence": "medium",
+      "limitations": "Aave V3 collateral-only reserves have missing borrowing fields. Partial debt coverage is not a complete protocol or chain total."
+    },
+    {
+      "id": "avax_market_cap",
+      "label": "AVAX Market Capitalization",
+      "unit": "USD",
+      "definition": "Current market value of circulating AVAX reported by an independent market-data provider.",
+      "formula": "Provider circulating supply multiplied by current AVAX USD price.",
+      "sources": [
+        "coingecko",
+        "coinpaprika"
+      ],
+      "cadence": "5 minutes",
+      "coverageStart": "current observation",
+      "confidence": "medium",
+      "limitations": "Market cap depends on provider supply methodology; CoinPaprika is used when CoinGecko is rate limited."
+    },
+    {
+      "id": "ecosystem_asset_landscape",
+      "label": "Ecosystem Asset Landscape",
+      "unit": "USD",
+      "definition": "Side-by-side current values for AVAX market cap, ordinary stablecoins, and verified tokenized assets.",
+      "formula": "Display the independently calculated category totals without summing them into an ecosystem total.",
+      "sources": [
+        "coingecko",
+        "coinpaprika",
+        "defillama-stablecoins",
+        "defillama-tvl"
+      ],
+      "cadence": "daily",
+      "coverageStart": "source dependent",
+      "confidence": "medium",
+      "limitations": "Categories describe different accounting concepts and may overlap economically, so the chart is comparative rather than additive."
+    },
+    {
+      "id": "bridge_tvl",
+      "label": "Avalanche Bridge TVL",
+      "unit": "USD",
+      "definition": "Current Avalanche value attributed to protocols categorized as bridges.",
+      "formula": "Sum positive Avalanche chain TVL for named bridge protocol adapters.",
+      "sources": [
+        "defillama-tvl"
+      ],
+      "cadence": "daily",
+      "coverageStart": "protocol dependent",
+      "confidence": "medium",
+      "limitations": "Adapter balances do not measure flow, capacity, redeemability, security, or operational health. Status is Unknown unless a separate official source URL and checked-at timestamp support it."
+    },
+    {
+      "id": "average_transaction_cost",
+      "label": "Average and Median Transaction Cost",
+      "unit": "AVAX",
+      "definition": "Mean or median fee paid by included C-Chain transactions in a complete UTC day.",
+      "formula": "Per transaction gas_used multiplied by effective_gas_price, divided by 1e18; then mean or median.",
+      "sources": [
+        "avacache-parquet"
+      ],
+      "cadence": "daily",
+      "coverageStart": "2026-06-24 on this deployment",
+      "confidence": "high",
+      "limitations": "USD history is not asserted without observation-date AVAX prices."
+    },
+    {
+      "id": "average_gas_price",
+      "label": "Average Gas Price",
+      "unit": "Gwei",
+      "definition": "Mean effective gas price across included C-Chain transactions in a complete UTC day.",
+      "formula": "avg(effective_gas_price) / 1e9.",
+      "sources": [
+        "avacache-parquet"
+      ],
+      "cadence": "daily",
+      "coverageStart": "2026-06-24 on this deployment",
+      "confidence": "high",
+      "limitations": "A transaction-weighted mean differs from a time-weighted base-fee series."
+    },
+    {
+      "id": "block_utilization",
+      "label": "Average Block Utilization",
+      "unit": "percent",
+      "definition": "Mean share of each C-Chain block gas limit consumed during a complete UTC day.",
+      "formula": "avg(block gas_used / block gas_limit) * 100.",
+      "sources": [
+        "avacache-parquet"
+      ],
+      "cadence": "daily",
+      "coverageStart": "2026-06-24 on this deployment",
+      "confidence": "high",
+      "limitations": "Gas-limit utilization is not equivalent to transaction-capacity utilization."
+    },
+    {
+      "id": "blockspace_performance",
+      "label": "Throughput and Failure Rate",
+      "unit": "TPS and percent",
+      "definition": "Daily average transaction throughput shown alongside the outer-transaction failure share.",
+      "formula": "transactions / 86,400 and failed transactions / transactions * 100.",
+      "sources": [
+        "avacache-parquet"
+      ],
+      "cadence": "daily",
+      "coverageStart": "2026-06-24 on this deployment",
+      "confidence": "high",
+      "limitations": "Daily TPS is not peak throughput; internal call reverts are not separately counted."
+    },
+    {
+      "id": "annualized_fee_burn",
+      "label": "30-day annualized run rate",
+      "unit": "AVAX per year",
+      "definition": "Recent average daily C-Chain fee burn extrapolated to 365 days.",
+      "formula": "Displayed trailing 30-day average daily C-Chain burn multiplied by 365.",
+      "sources": [
+        "avacache-parquet",
+        "avalanche-docs"
+      ],
+      "cadence": "daily",
+      "coverageStart": "2026-06-24 on this deployment",
+      "confidence": "high",
+      "limitations": "An annualized run rate is not a forecast and the 30-day window is partial until 30 observations exist."
+    },
+    {
+      "id": "avax_supply_ledger",
+      "label": "Primary Network Supply Ledger",
+      "unit": "AVAX",
+      "definition": "Current total AVAX supply and cumulative net supply added since the 360 million AVAX genesis unlock.",
+      "formula": "Current total supply = 360M genesis unlock + cumulative staking rewards minted - cumulative P-, C-, and X-Chain transaction fees burned. Net supply since genesis = current total supply - genesis unlock.",
+      "sources": [
+        "avalanche-data-api",
+        "avalanche-docs"
+      ],
+      "cadence": "60-second cached live observation",
+      "coverageStart": "current cumulative observation",
+      "confidence": "high",
+      "limitations": "This is a current cumulative ledger, not a historical issuance time series. The dashboard does not infer validator operating expenses or profit."
+    },
+    {
+      "id": "avax_staking_rewards",
+      "label": "Staking Rewards Minted",
+      "unit": "AVAX",
+      "definition": "Cumulative AVAX minted by the Primary Network protocol as staking rewards.",
+      "formula": "Use the official Data API totalRewards field without converting transaction fees into validator revenue.",
+      "sources": [
+        "avalanche-data-api",
+        "avalanche-docs"
+      ],
+      "cadence": "60-second cached live observation",
+      "coverageStart": "current cumulative observation",
+      "confidence": "high",
+      "limitations": "The cumulative total is not the same as current validator income, annual reward rate, or realized delegation fee revenue."
+    },
+    {
+      "id": "avax_network_fee_burn",
+      "label": "Primary Network Fees Burned",
+      "unit": "AVAX",
+      "definition": "Cumulative AVAX destroyed by transaction fees on the P-, C-, and X-Chains.",
+      "formula": "totalPBurned + totalCBurned + totalXBurned from the official Avalanche Data API.",
+      "sources": [
+        "avalanche-data-api",
+        "avalanche-docs"
+      ],
+      "cadence": "60-second cached live observation",
+      "coverageStart": "current cumulative observation",
+      "confidence": "high",
+      "limitations": "The all-time Primary Network total is distinct from the dashboard's locally indexed C-Chain coverage-window burn."
+    },
+    {
+      "id": "unsupported_network_economics",
+      "label": "Unsupported Network Economics",
+      "unit": "Not applicable",
+      "definition": "Validator operating cost, gross profit, and margin concepts that cannot currently be reproduced defensibly for the Primary Network or C-Chain.",
+      "formula": "No value is calculated; the machine value remains null.",
+      "sources": [
+        "avalanche-docs"
+      ],
+      "cadence": "release driven",
+      "coverageStart": "not available",
+      "confidence": "high",
+      "limitations": "Private validator costs remain outside verified coverage. Current cumulative supply accounting is published separately from these unsupported profitability concepts."
+    },
+    {
+      "id": "tokenized_asset_count",
+      "label": "Verified Tokenized Asset Count",
+      "unit": "contracts",
+      "definition": "Number of Avalanche token contracts whose issuance and backing classification are verified in the registry.",
+      "formula": "Count registry contracts with role Token and an issuer-backed RWA classification.",
+      "sources": [
+        "routescan",
+        "avalanche-public-rpc"
+      ],
+      "cadence": "daily",
+      "coverageStart": "2026-07-24 on this deployment",
+      "confidence": "high",
+      "limitations": "Bridged representations, ordinary stablecoins, and unverified claims are excluded."
+    },
+    {
+      "id": "tokenized_asset_holders",
+      "label": "Verified Tokenized Asset Holders",
+      "unit": "addresses",
+      "definition": "Current explorer-reported holder addresses summed across verified tokenized-asset contracts.",
+      "formula": "Sum current token holder count for each verified token contract.",
+      "sources": [
+        "routescan"
+      ],
+      "cadence": "daily",
+      "coverageStart": "2026-07-24 on this deployment",
+      "confidence": "medium",
+      "limitations": "Addresses are not people, one address may hold multiple assets, and history starts with this deployment."
+    },
+    {
+      "id": "tokenized_mint_burn",
+      "label": "Tokenized Asset Mint and Burn",
+      "unit": "token units",
+      "definition": "Transfer events from or to the zero address for a selected verified token contract.",
+      "formula": "Sum Transfer values with from zero for mints and to zero for burns, divided by on-chain token decimals.",
+      "sources": [
+        "avacache-parquet",
+        "avalanche-public-rpc"
+      ],
+      "cadence": "daily",
+      "coverageStart": "2026-06-24 on this deployment",
+      "confidence": "high",
+      "limitations": "Token units are not converted to historical USD without observation-date NAV."
+    },
+    {
+      "id": "tokenized_dex_volume",
+      "label": "Tokenized Asset DEX Volume",
+      "unit": "USD",
+      "definition": "Direct spot swap volume for verified tokenized assets.",
+      "formula": "No value is calculated until verified pool events can be deduplicated across direct, multi-hop, and internal operations.",
+      "sources": [
+        "avacache-parquet"
+      ],
+      "cadence": "daily",
+      "coverageStart": "not available",
+      "confidence": "high",
+      "limitations": "The metric remains null under current pool-registry coverage."
+    },
+    {
+      "id": "lending_available_liquidity",
+      "label": "Available Lending Liquidity",
+      "unit": "USD",
+      "definition": "Source-reported liquid cash in eligible tracked markets; not a promise of borrowing or immediate withdrawal capacity.",
+      "formula": "Sum eligible protocol-native liquid-cash values; do not derive it from supply minus debt.",
+      "sources": [
+        "defillama-tvl"
+      ],
+      "cadence": "hourly",
+      "coverageStart": "protocol dependent",
+      "confidence": "medium",
+      "limitations": "Silo protected collateral is separate and not borrowable. Aave V4 spoke borrow capacity is not hub cash. Reserves, caps, impairment and pauses may constrain usable liquidity."
+    },
+    {
+      "id": "lending_rates",
+      "label": "Current Lending Market Rates",
+      "unit": "percent APR or APY, explicitly labeled per row",
+      "definition": "Source-reported base supply and borrow rates for Avalanche Aave V3/V4, BENQI, Euler V2, Silo V2 and V3. Each row preserves APR or APY basis.",
+      "formula": "Use the canonical materializer source rate and declared scaling; incentives are separate and unavailable when unreported.",
+      "sources": [
+        "euler-protocol-native",
+        "silo-protocol-native",
+        "defillama-yields",
+        "avalanche-public-rpc"
+      ],
+      "cadence": "5-minute source materialization; source timestamps retained.",
+      "coverageStart": "pool dependent",
+      "confidence": "medium",
+      "limitations": "The current Euler source may omit rates even when balances are available. No older differently timed rates, incentive zeros or inferred APYs fill missing observations. Variable rates are observations, not forecasts."
+    },
+    {
+      "id": "lending_vault_tvl",
+      "label": "Factory Vault Assets",
+      "unit": "USD",
+      "definition": "Separate nonadditive allocator-vault accounting when a canonical vault materialization is supplied.",
+      "formula": "Only a verified canonical vault inventory may populate this lane.",
+      "sources": [
+        "avalanche-public-rpc",
+        "defillama-coins"
+      ],
+      "cadence": "hourly",
+      "coverageStart": "current fixed-block observation",
+      "confidence": "high",
+      "limitations": "Currently unavailable if no canonical allocator-vault inventory is supplied. Underlying lending-market assets must not be counted again as allocator vault assets."
+    },
+    {
+      "id": "lending_liquidations",
+      "label": "Lending Liquidation Activity",
+      "unit": "events and USD debt repaid",
+      "definition": "Dated retained liquidation observations for Aave V3/V4, BENQI and Euler; Silo hook/generation coverage is unverified and quarantined.",
+      "formula": "Observed unique transaction/log pairs in the explicitly dated retained window; USD values are historical token-price estimates, not necessarily cash repaid.",
+      "sources": [
+        "avacache-parquet",
+        "avalanche-public-rpc",
+        "defillama-coins"
+      ],
+      "cadence": "Retained historical snapshot; no current complete event feed claimed.",
+      "coverageStart": "rolling 30 complete indexed days",
+      "confidence": "high",
+      "limitations": "Partial, unverified registry and event-window coverage; BENQI isolated markets and Silo generations are not complete. No exact global count, exhaustive zero or current rolling 30-day claim. Aave liquidator attribution is withheld."
+    },
+    {
+      "id": "cross_source_verification",
+      "label": "Cross-Source Verification",
+      "unit": "Source-dependent",
+      "definition": "A scope-aware comparison between an Observatory metric and a separately fetched primary, independent, or same-provider consistency value.",
+      "formula": "variance percent = (Observatory value - comparator value) / abs(comparator value) * 100. Only exact-scope checks are scored; context-only or unavailable values never pass or fail.",
+      "sources": [
+        "rwa-xyz-public",
+        "avalanche-metrics-api",
+        "defillama-tvl",
+        "coingecko",
+        "coinpaprika"
+      ],
+      "cadence": "hourly with the dashboard collector",
+      "coverageStart": "2026-07-24",
+      "confidence": "high",
+      "limitations": "The badge count is derived from passing scored ledger rows. It is scope-limited and does not certify all stablecoin, DEX architecture, bridge-health, lending-market, rate, vault, liquidation, or deployment-history data. Same-provider checks are consistency checks, not independent verification."
+    }
+  ]
+}

@@ -1,0 +1,33 @@
+{
+  "name": "avalanche-ecosystem-observatory",
+  "version": "1.0.0",
+  "private": true,
+  "license": "MIT",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "vite --host 0.0.0.0",
+    "build": "vite build",
+    "build:sites": "node scripts/build-sites.mjs",
+    "collect": "node scripts/collect.mjs",
+    "collect:blockspace": "node scripts/collect-blockspace.mjs",
+    "collect:tokenized": "node scripts/collect-tokenized.mjs",
+    "snapshot:publish": "node scripts/publish-static.mjs",
+    "serve": "node server.mjs",
+    "healthcheck": "node scripts/healthcheck.mjs",
+    "check": "node scripts/validate-config.mjs && node --check server.mjs && node --check live-pulse.mjs && node --check radar-adapter.mjs && node --check scripts/dashboard-invariants.mjs && node --check scripts/collect.mjs && node --check scripts/bounded-child.mjs && node --check scripts/blockspace-history.mjs && node --check scripts/collect-blockspace.mjs && node --check scripts/collect-tokenized.mjs && node --check scripts/tokenized-dashboard.mjs && node --check scripts/collect-lending.mjs && node --check scripts/lending-materialized.mjs && node --check scripts/lending-metrics.mjs && node --check scripts/publish-static.mjs && node --check scripts/build-sites.mjs && node --check deploy/sites/worker.mjs && node --check scripts/lending-dashboard.mjs && node --check scripts/refresh-lending-dashboard.mjs",
+    "test": "npm run build --silent && node --test test/*.test.mjs",
+    "collect:lending": "node scripts/refresh-lending-dashboard.mjs"
+  },
+  "dependencies": {
+    "@duckdb/node-api": "1.4.3-r.3",
+    "@vitejs/plugin-react": "^5.1.4",
+    "lucide-react": "^0.468.0",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "recharts": "^3.8.0",
+    "vite": "^7.3.1"
+  }
+}

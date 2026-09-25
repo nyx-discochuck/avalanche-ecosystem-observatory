@@ -1,0 +1,20 @@
+// Local candidate-only assembly, without any upstream acquisition or unrelated refresh.
+import fs from 'node:fs/promises';
+import { normalizeMaterializedLending, retainPartialLiquidationHistory } from './lending-materialized.mjs';
+import { partitionLendingMarkets } from './lending-metrics.mjs';
+import { ROOT, writeJsonAtomic } from './lib.mjs';
+const source = process.argv[2];
+if (!source || !ROOT.includes('/reports/avalanche-lending-release-')) throw new Error('Explicit source snapshot and isolated release candidate required');
+const raw = JSON.parse(await fs.readFile(source, 'utf8'));
+const metrics = normalizeMaterializedLending(raw);
+const dashboard = JSON.parse(await fs.readFile(`${ROOT}/state/dashboard.json`, 'utf8'));
+const old = JSON.parse(await fs.readFile(`${ROOT}/state/lending-metrics.json`, 'utf8'));
+if (!raw.liquidations) metrics.liquidations = retainPartialLiquidationHistory(old.liquidations) || metrics.liquidations;
+const partitioned = partitionLendingMarkets(metrics.markets.rows);
+const l = dashboard.lending;
+Object.assign(l.kpis, { totalSuppliedUsd: metrics.aggregates.suppliedUsd, totalBorrowedUsd: metrics.aggregates.borrowedUsd, availableLiquidityUsd: metrics.aggregates.availableLiquidityUsd, factoryVaultAssetsUsd: metrics.vaults.grossAssetsUsd ?? null, liquidations30d: metrics.liquidations.totalEvents ?? null, liquidationDebtRepaidUsd30d: metrics.liquidations.debtRepaidUsd ?? null });
+Object.assign(l, { protocols: metrics.protocols, markets: partitioned.ordinary, impairedMarkets: partitioned.impaired, marketAvailability: metrics.markets.state, marketCoverage: metrics.markets.protocolCoverage, sourceHistories: metrics.histories, vaults: metrics.vaults.rows, vaultSummary: metrics.vaults, vaultAvailability: metrics.vaults.state, liquidationHistory: metrics.liquidations.history, liquidationEvents: metrics.liquidations.events, liquidationProtocols: metrics.liquidations.protocols, liquidationAvailability: metrics.liquidations.state, liquidationCoverage: metrics.liquidations.coverage, fixedBlock: metrics.fixedBlock });
+await writeJsonAtomic(`${ROOT}/state/lending-metrics.json`, metrics);
+await writeJsonAtomic(`${ROOT}/state/dashboard.json`, dashboard);
+await writeJsonAtomic(`${ROOT}/public/data/dashboard.json`, dashboard);
+console.log(JSON.stringify({ mode: 'isolated-preview-only', observedAt: metrics.observedAt, rows: metrics.markets.rows.length, histories: metrics.histories.length }));

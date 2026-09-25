@@ -1,0 +1,170 @@
+/* Couchdicks Evidence Terminal color-mode adapter.
+   The catalog owns the one canonical v1.3 theme controller and fleet toggle. */
+.header { background: var(--cd-overlay, rgba(11, 13, 16, .96)); }
+.panel, .kpi, .table-panel, .composition-panel, .comparison-panel {
+  background: var(--cd-surface-1, #111419);
+  border-color: var(--cd-border, #272d35);
+}
+.search-button, .icon-button, input, select {
+  background: var(--cd-surface-2, #171b21);
+  border-color: var(--cd-border, #272d35);
+  color: var(--cd-text, #f4f6f8);
+}
+.recharts-cartesian-grid line { stroke: var(--cd-chart-grid, #292f37) !important; }
+.recharts-cartesian-axis-tick text { fill: var(--cd-chart-axis, #7e8997) !important; }
+
+:root[data-cd-theme="light"] a { color: var(--cd-link); }
+:root[data-cd-theme="light"] a:hover { color: var(--cd-text); }
+:root[data-cd-theme="light"] .status-strip { background: #e7e2d8; border-color: var(--cd-border); color: var(--cd-muted); }
+:root[data-cd-theme="light"] .status-strip strong,
+:root[data-cd-theme="light"] .status-primary,
+:root[data-cd-theme="light"] .brand,
+:root[data-cd-theme="light"] .primary-nav a:first-child { color: var(--cd-text); }
+:root[data-cd-theme="light"] .brand-name span,
+:root[data-cd-theme="light"] .primary-nav a,
+:root[data-cd-theme="light"] .section-nav button { color: var(--cd-muted); }
+:root[data-cd-theme="light"] .section-nav,
+:root[data-cd-theme="light"] .mobile-menu { background: #eeeae1; }
+:root[data-cd-theme="light"] .section-nav button:hover { background: var(--cd-surface-2); color: var(--cd-text); }
+:root[data-cd-theme="light"] .section-nav button.active { background: #d8d2c6; color: var(--cd-text); }
+:root[data-cd-theme="light"] .quality-banner,
+:root[data-cd-theme="light"] .live-error { background: var(--cd-warn-bg); border-color: #cfb56d; color: #765000; }
+:root[data-cd-theme="light"] .live-pulse { background: linear-gradient(90deg, rgba(201,40,49,.07), transparent 23%), repeating-linear-gradient(90deg, transparent 0, transparent 39px, var(--cd-bg-grid) 40px), var(--cd-surface-1); border-color: var(--cd-border); }
+:root[data-cd-theme="light"] .live-pulse-heading,
+:root[data-cd-theme="light"] .block-tape,
+:root[data-cd-theme="light"] .live-market-rail,
+:root[data-cd-theme="light"] .live-disclosure,
+:root[data-cd-theme="light"] .supply-ledger-body { border-color: var(--cd-border); }
+:root[data-cd-theme="light"] .live-pulse-heading > div > strong,
+:root[data-cd-theme="light"] .live-metric-grid strong,
+:root[data-cd-theme="light"] .block-tape strong,
+:root[data-cd-theme="light"] .supply-net > strong,
+:root[data-cd-theme="light"] .supply-equation .supply-total strong { color: var(--cd-text); }
+:root[data-cd-theme="light"] .live-market-rail { background: rgba(255,255,255,.24); }
+:root[data-cd-theme="light"] .kpi.unavailable::after { background: #9ba2aa; }
+:root[data-cd-theme="light"] .source-link { border-color: var(--cd-border); color: var(--cd-muted); }
+:root[data-cd-theme="light"] .source-link:hover { background: var(--cd-surface-2); color: var(--cd-text); }
+:root[data-cd-theme="light"] .search-button kbd {
+  background: var(--cd-surface-3);
+  border-color: var(--cd-border-strong);
+  color: var(--cd-text);
+}
+:root[data-cd-theme="light"] .supply-net { background: linear-gradient(145deg, rgba(201,40,49,.08), transparent 58%), radial-gradient(circle at 90% 10%, rgba(201,40,49,.07), transparent 45%); }
+:root[data-cd-theme="light"] .stake-track,
+:root[data-cd-theme="light"] .burn-split div > i { background: var(--cd-surface-3); }
+:root[data-cd-theme="light"] .verification-preview { background: linear-gradient(110deg, #f4e8e7, #f6f2e9 48%, #efe8df); border-color: #d7aaa6; }
+:root[data-cd-theme="light"] .verification-seal { background: var(--cd-good-bg); border-color: #8ab9a6; color: var(--cd-good); }
+:root[data-cd-theme="light"] .modal-backdrop,
+:root[data-cd-theme="light"] .search-backdrop { background: rgba(41,44,47,.34); }
+:root[data-cd-theme="light"] .calendar-dialog,
+:root[data-cd-theme="light"] .method-dialog,
+:root[data-cd-theme="light"] .search-dialog { background: var(--cd-surface-1); border-color: var(--cd-border); color: var(--cd-text); }
+
+/* Spot Trading and shared analytical surfaces. Keep every foreground at or
+   above the Evidence Terminal muted-text contrast contract in light mode. */
+:root[data-cd-theme="light"] .page-title p,
+:root[data-cd-theme="light"] .freshness span,
+:root[data-cd-theme="light"] .panel-heading p,
+:root[data-cd-theme="light"] .kpi-label,
+:root[data-cd-theme="light"] .kpi-label button,
+:root[data-cd-theme="light"] .info-button,
+:root[data-cd-theme="light"] .kpi-detail,
+:root[data-cd-theme="light"] .legend button,
+:root[data-cd-theme="light"] .donut > div:last-child span,
+:root[data-cd-theme="light"] .composition-list span,
+:root[data-cd-theme="light"] .composition-list small,
+:root[data-cd-theme="light"] .comparison-reference span,
+:root[data-cd-theme="light"] .comparison-row span,
+:root[data-cd-theme="light"] .table-footer,
+:root[data-cd-theme="light"] .address-cell code,
+:root[data-cd-theme="light"] .address-cell span,
+:root[data-cd-theme="light"] .empty-state,
+:root[data-cd-theme="light"] .method-dialog dt,
+:root[data-cd-theme="light"] .calendar-dialog > label,
+:root[data-cd-theme="light"] footer { color: var(--cd-muted); }
+
+:root[data-cd-theme="light"] .kpi-value,
+:root[data-cd-theme="light"] .donut > div:last-child strong,
+:root[data-cd-theme="light"] .composition-list strong,
+:root[data-cd-theme="light"] .comparison-reference strong,
+:root[data-cd-theme="light"] .comparison-row strong,
+:root[data-cd-theme="light"] .empty-state strong,
+:root[data-cd-theme="light"] .method-dialog dd { color: var(--cd-text); }
+
+:root[data-cd-theme="light"] .segmented,
+:root[data-cd-theme="light"] .table-search,
+:root[data-cd-theme="light"] .comparison-reference {
+  background: var(--cd-surface-2);
+  border-color: var(--cd-border);
+}
+:root[data-cd-theme="light"] .segmented button { color: var(--cd-muted); }
+:root[data-cd-theme="light"] .segmented button:hover { background: var(--cd-surface-3); color: var(--cd-text); }
+:root[data-cd-theme="light"] .segmented button.active {
+  background: var(--red);
+  color: #fff !important;
+}
+
+:root[data-cd-theme="light"] .chart-menu {
+  background: var(--cd-tooltip);
+  border-color: var(--cd-border-strong);
+  box-shadow: var(--cd-shadow);
+}
+:root[data-cd-theme="light"] .chart-menu button { color: var(--cd-text); }
+:root[data-cd-theme="light"] .chart-menu button:hover { background: var(--cd-surface-2); }
+:root[data-cd-theme="light"] .chart-tooltip {
+  background: var(--cd-tooltip);
+  border-color: var(--cd-border-strong);
+  box-shadow: var(--cd-shadow);
+}
+:root[data-cd-theme="light"] .chart-tooltip strong,
+:root[data-cd-theme="light"] .chart-tooltip span b { color: var(--cd-text); }
+:root[data-cd-theme="light"] .chart-tooltip span { color: var(--cd-muted); }
+:root[data-cd-theme="light"] .legend,
+:root[data-cd-theme="light"] .composition-list > div { border-color: var(--cd-border); }
+:root[data-cd-theme="light"] .legend button.show-more { color: var(--cd-text); }
+
+:root[data-cd-theme="light"] .comparison-track { background: var(--cd-surface-3); }
+:root[data-cd-theme="light"] .table-search { color: var(--cd-muted); }
+:root[data-cd-theme="light"] .table-search input { color: var(--cd-text); }
+:root[data-cd-theme="light"] th { background: var(--cd-surface-2); border-color: var(--cd-border); }
+:root[data-cd-theme="light"] th button { color: var(--cd-muted); }
+:root[data-cd-theme="light"] td { border-color: var(--cd-border); color: var(--cd-text); }
+:root[data-cd-theme="light"] tbody tr:hover { background: var(--cd-surface-2); }
+:root[data-cd-theme="light"] .table-footer button {
+  background: var(--cd-surface-2);
+  border: 1px solid var(--cd-border);
+  color: var(--cd-text);
+}
+:root[data-cd-theme="light"] .table-footer button:hover { background: var(--cd-surface-3); }
+:root[data-cd-theme="light"] .protocol-cell img,
+:root[data-cd-theme="light"] .protocol-fallback { background: var(--cd-surface-3); }
+
+:root[data-cd-theme="light"] .coverage-note {
+  background: var(--cd-surface-2);
+  border-color: var(--cd-border-strong);
+  color: var(--cd-muted);
+}
+:root[data-cd-theme="light"] .coverage-note strong { color: var(--cd-text); }
+:root[data-cd-theme="light"] .timeframe {
+  background: color-mix(in srgb, var(--cd-surface-1) 96%, transparent);
+  border-color: var(--cd-border-strong);
+  box-shadow: var(--cd-shadow);
+}
+:root[data-cd-theme="light"] .timeframe button { color: var(--cd-muted); }
+:root[data-cd-theme="light"] .timeframe button:hover { background: var(--cd-surface-2); color: var(--cd-text); }
+:root[data-cd-theme="light"] .timeframe button.active { background: var(--red); color: #fff !important; }
+
+:root[data-cd-theme="light"] .method-dialog dl div,
+:root[data-cd-theme="light"] .dialog-title,
+:root[data-cd-theme="light"] .dialog-actions,
+:root[data-cd-theme="light"] .search-input { border-color: var(--cd-border); }
+:root[data-cd-theme="light"] .dialog-actions button {
+  background: var(--cd-surface-2);
+  color: var(--cd-text);
+}
+:root[data-cd-theme="light"] .dialog-actions button.primary { background: var(--red); color: #fff !important; }
+:root[data-cd-theme="light"] .search-input input,
+:root[data-cd-theme="light"] .search-results > button { color: var(--cd-text); }
+:root[data-cd-theme="light"] .search-input button,
+:root[data-cd-theme="light"] .search-results > button small { color: var(--cd-muted); }
+:root[data-cd-theme="light"] .search-results > button:hover { background: var(--cd-surface-2); }

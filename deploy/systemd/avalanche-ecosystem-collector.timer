@@ -1,0 +1,11 @@
+[Unit]
+Description=Hourly Avalanche Ecosystem Observatory refresh
+
+[Timer]
+OnCalendar=*:08
+RandomizedDelaySec=90
+Persistent=true
+Unit=avalanche-ecosystem-collector.service
+
+[Install]
+WantedBy=timers.target

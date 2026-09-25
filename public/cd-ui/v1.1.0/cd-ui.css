@@ -1,0 +1,156 @@
+/* @couchdicks/ui v1.1.0 */
+:root,
+:root[data-cd-theme="dark"] {
+  color-scheme: dark;
+  --cd-bg: #0b0d10;
+  --cd-bg-grid: rgba(255, 255, 255, .018);
+  --cd-surface-1: #111419;
+  --cd-surface-2: #171b21;
+  --cd-surface-3: #20262d;
+  --cd-overlay: rgba(8, 10, 13, .96);
+  --cd-border: #272d35;
+  --cd-border-strong: #3a434e;
+  --cd-text: #f4f6f8;
+  --cd-muted: #929cab;
+  --cd-quiet: #66717e;
+  --cd-inverse: #0b0d10;
+  --cd-link: #9fd7ff;
+  --cd-good: #34d399;
+  --cd-good-bg: #0e251d;
+  --cd-warn: #fbbf24;
+  --cd-warn-bg: #241d0a;
+  --cd-danger: #fb7185;
+  --cd-danger-bg: #2a1016;
+  --cd-context: #38bdf8;
+  --cd-context-bg: #0d2230;
+  --cd-chart-grid: #292f37;
+  --cd-chart-axis: #7e8997;
+  --cd-tooltip: #191e24;
+  --cd-shadow: 0 18px 55px rgba(0, 0, 0, .26);
+  --cd-accent: #58e2d6;
+  --cd-accent-2: #ff4fb9;
+  --cd-accent-contrast: #07110f;
+}
+
+:root[data-cd-theme="light"] {
+  color-scheme: light;
+  --cd-bg: #f2efe7;
+  --cd-bg-grid: rgba(26, 31, 34, .055);
+  --cd-surface-1: #fbf9f3;
+  --cd-surface-2: #e9e5dc;
+  --cd-surface-3: #dcd7cc;
+  --cd-overlay: rgba(251, 249, 243, .96);
+  --cd-border: #c8c2b5;
+  --cd-border-strong: #9e9789;
+  --cd-text: #171b1e;
+  --cd-muted: #59636c;
+  --cd-quiet: #77818a;
+  --cd-inverse: #f7f4ec;
+  --cd-link: #075d8b;
+  --cd-good: #087a55;
+  --cd-good-bg: #dcefe7;
+  --cd-warn: #8b5b00;
+  --cd-warn-bg: #f5e9c8;
+  --cd-danger: #b4233a;
+  --cd-danger-bg: #f6dde1;
+  --cd-context: #066b9f;
+  --cd-context-bg: #dcecf4;
+  --cd-chart-grid: #d4cec3;
+  --cd-chart-axis: #5e6871;
+  --cd-tooltip: #fffdf8;
+  --cd-shadow: 0 16px 42px rgba(31, 35, 38, .12);
+  --cd-accent: #087f77;
+  --cd-accent-2: #b42372;
+  --cd-accent-contrast: #ffffff;
+}
+
+html {
+  background: var(--cd-bg);
+  color: var(--cd-text);
+}
+
+body.cd-app {
+  min-width: 320px;
+  background:
+    linear-gradient(var(--cd-bg-grid) 1px, transparent 1px) 0 0 / 32px 32px,
+    linear-gradient(90deg, var(--cd-bg-grid) 1px, transparent 1px) 0 0 / 32px 32px,
+    var(--cd-bg);
+  color: var(--cd-text);
+}
+
+.cd-app a { color: var(--cd-link); }
+.cd-app :focus-visible { outline: 2px solid var(--cd-context); outline-offset: 2px; }
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto !important; }
+  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+}
+
+.cd-theme-toggle {
+  min-width: 40px;
+  min-height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 0 10px;
+  color: var(--cd-muted);
+  background: var(--cd-surface-1);
+  border: 1px solid var(--cd-border);
+  border-radius: 4px;
+  font: 700 9px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: .06em;
+  cursor: pointer;
+  text-transform: uppercase;
+}
+
+.cd-theme-toggle:hover {
+  color: var(--cd-text);
+  background: var(--cd-surface-2);
+  border-color: var(--cd-border-strong);
+}
+
+.cd-theme-toggle__icon {
+  width: 16px;
+  height: 16px;
+  display: grid;
+  place-items: center;
+  color: var(--cd-accent);
+  font-size: 15px;
+  line-height: 1;
+}
+
+@media (max-width: 650px) {
+  .cd-theme-toggle { width: 40px; padding: 0; }
+  .cd-theme-toggle__label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+}
+
+.cd-app[data-cd-mode="catalog"] { --cd-panel-radius: 0; }
+.cd-app[data-cd-mode="catalog"] .card { box-shadow: var(--cd-shadow); }
+
+.cd-app[data-cd-mode="terminal"] { --cd-panel-radius: 6px; }
+
+.cd-app[data-cd-mode="investigation"] { --cd-panel-radius: 6px; }
+
+.cd-app[data-cd-mode="lab"] { --cd-panel-radius: 8px; }
+
+.cd-app[data-cd-brand="catalog"] {
+  --cd-accent: #58e2d6;
+  --cd-accent-2: #ff4fb9;
+  --cd-accent-contrast: #07110f;
+}
+:root[data-cd-theme="light"] .cd-app[data-cd-brand="catalog"] { --cd-accent: #087f77; --cd-accent-2: #b42372; }
+
+.cd-app[data-cd-brand="arena"] {
+  --cd-accent: #7c5cff;
+  --cd-accent-2: #31c7d9;
+  --cd-accent-contrast: #ffffff;
+}
+:root[data-cd-theme="light"] .cd-app[data-cd-brand="arena"] { --cd-accent: #5c3ed0; --cd-accent-2: #087f8e; }
+
+.cd-app[data-cd-brand="avalanche"] {
+  --cd-accent: #e84142;
+  --cd-accent-2: #f27660;
+  --cd-accent-contrast: #ffffff;
+}
+:root[data-cd-theme="light"] .cd-app[data-cd-brand="avalanche"] { --cd-accent: #c92831; --cd-accent-2: #a43b2d; }

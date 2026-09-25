@@ -1,0 +1,160 @@
+{
+  "schema": "couchdicks.avalanche.tokenized-activity.v1",
+  "generatedAt": "2026-09-18T06:09:28.062Z",
+  "source": "local-avacache-parquet",
+  "coverage": {
+    "start": "2026-09-11",
+    "end": "2026-09-17",
+    "days": 7
+  },
+  "note": "Mint and burn amounts are raw token units until onchain decimals are applied by the main collector. Historical USD values are withheld unless an observation-date NAV is available.",
+  "tokens": [
+    {
+      "id": "buidl",
+      "name": "BlackRock BUIDL",
+      "address": "0x53fc82f14f009009b440a706e31c9021e1196a2f",
+      "category": "Tokenized treasury fund"
+    },
+    {
+      "id": "vbill",
+      "name": "VanEck VBILL",
+      "address": "0x7f4546ef315efc65336187fe3765ea779ac90183",
+      "category": "Tokenized treasury fund"
+    },
+    {
+      "id": "acred",
+      "name": "Apollo ACRED",
+      "address": "0x7c64925002bfa705834b118a923e9911bee32875",
+      "category": "Tokenized private credit fund"
+    },
+    {
+      "id": "secz",
+      "name": "Securitize SECZ",
+      "address": "0x5954ff4099ac47c4d6d098a9216f3278bb8c9506",
+      "category": "Tokenized equity"
+    }
+  ],
+  "daily": [
+    {
+      "date": "2026-09-11",
+      "address": "0x53fc82f14f009009b440a706e31c9021e1196a2f",
+      "transfers": 5,
+      "mint_events": 5,
+      "burn_events": 0,
+      "minted_raw": 53812950000,
+      "burned_raw": 0,
+      "participant_sides": 6,
+      "tokenId": "buidl"
+    },
+    {
+      "date": "2026-09-11",
+      "address": "0x7f4546ef315efc65336187fe3765ea779ac90183",
+      "transfers": 1,
+      "mint_events": 1,
+      "burn_events": 0,
+      "minted_raw": 67620000,
+      "burned_raw": 0,
+      "participant_sides": 2,
+      "tokenId": "vbill"
+    },
+    {
+      "date": "2026-09-14",
+      "address": "0x53fc82f14f009009b440a706e31c9021e1196a2f",
+      "transfers": 7,
+      "mint_events": 5,
+      "burn_events": 1,
+      "minted_raw": 161420370000,
+      "burned_raw": 500000000000,
+      "participant_sides": 10,
+      "tokenId": "buidl"
+    },
+    {
+      "date": "2026-09-14",
+      "address": "0x7f4546ef315efc65336187fe3765ea779ac90183",
+      "transfers": 1,
+      "mint_events": 1,
+      "burn_events": 0,
+      "minted_raw": 202160000,
+      "burned_raw": 0,
+      "participant_sides": 2,
+      "tokenId": "vbill"
+    },
+    {
+      "date": "2026-09-15",
+      "address": "0x53fc82f14f009009b440a706e31c9021e1196a2f",
+      "transfers": 5,
+      "mint_events": 5,
+      "burn_events": 0,
+      "minted_raw": 53790330000,
+      "burned_raw": 0,
+      "participant_sides": 6,
+      "tokenId": "buidl"
+    },
+    {
+      "date": "2026-09-15",
+      "address": "0x7f4546ef315efc65336187fe3765ea779ac90183",
+      "transfers": 1,
+      "mint_events": 1,
+      "burn_events": 0,
+      "minted_raw": 66230000,
+      "burned_raw": 0,
+      "participant_sides": 2,
+      "tokenId": "vbill"
+    },
+    {
+      "date": "2026-09-16",
+      "address": "0x53fc82f14f009009b440a706e31c9021e1196a2f",
+      "transfers": 5,
+      "mint_events": 5,
+      "burn_events": 0,
+      "minted_raw": 54202890000,
+      "burned_raw": 0,
+      "participant_sides": 6,
+      "tokenId": "buidl"
+    },
+    {
+      "date": "2026-09-16",
+      "address": "0x5954ff4099ac47c4d6d098a9216f3278bb8c9506",
+      "transfers": 3,
+      "mint_events": 1,
+      "burn_events": 0,
+      "minted_raw": 2000000,
+      "burned_raw": 0,
+      "participant_sides": 6,
+      "tokenId": "secz"
+    },
+    {
+      "date": "2026-09-16",
+      "address": "0x7f4546ef315efc65336187fe3765ea779ac90183",
+      "transfers": 1,
+      "mint_events": 1,
+      "burn_events": 0,
+      "minted_raw": 68350000,
+      "burned_raw": 0,
+      "participant_sides": 2,
+      "tokenId": "vbill"
+    },
+    {
+      "date": "2026-09-17",
+      "address": "0x53fc82f14f009009b440a706e31c9021e1196a2f",
+      "transfers": 5,
+      "mint_events": 5,
+      "burn_events": 0,
+      "minted_raw": 53901640000,
+      "burned_raw": 0,
+      "participant_sides": 6,
+      "tokenId": "buidl"
+    },
+    {
+      "date": "2026-09-17",
+      "address": "0x7f4546ef315efc65336187fe3765ea779ac90183",
+      "transfers": 1,
+      "mint_events": 1,
+      "burn_events": 0,
+      "minted_raw": 67660000,
+      "burned_raw": 0,
+      "participant_sides": 2,
+      "tokenId": "vbill"
+    }
+  ]
+}

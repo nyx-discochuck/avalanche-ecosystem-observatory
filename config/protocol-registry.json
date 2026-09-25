@@ -1,0 +1,327 @@
+{
+  "schema": "couchdicks.avalanche.protocol-registry.v1",
+  "chainId": 43114,
+  "explorer": "https://snowtrace.io",
+  "lastReviewed": "2026-08-15",
+  "protocols": [
+    {
+      "id": "aave-v3",
+      "name": "Aave V3",
+      "category": "Lending",
+      "architecture": "pooled lending",
+      "deploymentBlock": 11970506,
+      "contracts": [
+        {
+          "role": "Pool",
+          "address": "0x794a61358D6845594F94dc1DB02A252b5b4814aD",
+          "proxy": true
+        },
+        {
+          "role": "ProtocolDataProvider",
+          "address": "0x243Aa95cAC2a25651eda86e80bEe66114413c43b",
+          "proxy": false
+        },
+        {
+          "role": "Oracle",
+          "address": "0xEBd36016B3eD09D4693Ed4251c67Bd858c3c7C9C",
+          "proxy": true
+        }
+      ],
+      "source": "https://github.com/aave-dao/aave-address-book",
+      "confidence": "high",
+      "lastReviewed": "2026-09-17"
+    },
+    {
+      "id": "aave-v4",
+      "name": "Aave V4",
+      "category": "Lending",
+      "architecture": "multi-spoke pooled lending",
+      "contracts": [
+        {
+          "role": "Core Hub",
+          "address": "0xd07369fAE4A5BB13c9Ce446B052c7867B1AbDf6e"
+        },
+        {
+          "role": "Main Spoke",
+          "address": "0x435272CefF93a1E657E8ABfdf0A13e95900A3a56",
+          "proxy": true
+        },
+        {
+          "role": "AVAX Correlated Spoke",
+          "address": "0x3b517594277c67307CF2d7CBE6FE1D4399B68c41",
+          "proxy": true
+        },
+        {
+          "role": "Forex Spoke",
+          "address": "0x6a37776B5E026dBdF043b4F933c323C84DD1B514",
+          "proxy": true
+        }
+      ],
+      "source": "https://github.com/aave-dao/aave-address-book",
+      "confidence": "high",
+      "note": "Seven hub assets are counted once; spoke reserves are nonadditive allocations. Official API observations do not claim a shared block.",
+      "lastReviewed": "2026-09-17"
+    },
+    {
+      "id": "benqi",
+      "name": "BENQI",
+      "category": "Lending",
+      "architecture": "Compound-style isolated markets",
+      "contracts": [
+        {
+          "role": "Comptroller",
+          "address": "0x486Af39519B4Dc9a7fCcd318217352830E8aD9b4",
+          "proxy": true
+        },
+        {
+          "role": "Isolated Markets Comptroller",
+          "address": "0xfc8C7271BdC3816D7AB1fc802216bad387692Ce1"
+        },
+        {
+          "role": "sAVAX",
+          "address": "0x2b2C81e08f1Af8835a78Bb2A90AE924ACE0eA4bE",
+          "proxy": true
+        }
+      ],
+      "source": "https://docs.benqi.fi",
+      "confidence": "high",
+      "lastReviewed": "2026-09-17"
+    },
+    {
+      "id": "euler-v2",
+      "name": "Euler V2",
+      "category": "Lending",
+      "architecture": "permissionless ERC-4626 credit vaults",
+      "contracts": [
+        {
+          "role": "eVaultFactory",
+          "address": "0xaf4B4c18B17F6a2B32F6c398a3910bdCD7f26181",
+          "proxy": false
+        },
+        {
+          "role": "EVK Factory Perspective",
+          "address": "0x4247432b4f9c32e99ecC2Ff7bAdd98783EecFA6F",
+          "proxy": false
+        },
+        {
+          "role": "UtilsLens",
+          "address": "0xFF241D57Fb342aeA9BC6de386852272C516063EE",
+          "proxy": false
+        }
+      ],
+      "source": "https://github.com/euler-xyz/euler-interfaces/tree/d938bc264d6e1cee68a559798044d43ade8ac95e/addresses/43114",
+      "confidence": "high",
+      "note": "Factory provenance does not imply vault risk curation; accounting remains gross and non-additive.",
+      "lastReviewed": "2026-09-17"
+    },
+    {
+      "id": "silo-v2",
+      "name": "Silo V2",
+      "category": "Lending",
+      "architecture": "legacy-generation isolated lending markets",
+      "contracts": [
+        {
+          "role": "SiloFactory",
+          "address": "0x92cecb67ed267ff98026f814d813fdf3054c6ff9"
+        }
+      ],
+      "source": "https://docs.silo.finance/",
+      "confidence": "high",
+      "lastReviewed": "2026-09-17",
+      "note": "Legacy factory IDs100 onward; kept separate from current Silo V3. Shared lens is listed under Silo V3. Some app API details are unavailable; counts distinguish discovery from decoded financial coverage."
+    },
+    {
+      "id": "silo-v3",
+      "name": "Silo V3",
+      "category": "Lending",
+      "architecture": "isolated lending markets and ERC-4626 allocator vaults",
+      "contracts": [
+        {
+          "role": "SiloFactory",
+          "address": "0x9e64f0CD206cce2Da5dE08E7F482D62F57013D0e",
+          "proxy": false
+        },
+        {
+          "role": "SiloVaultFactory",
+          "address": "0x6Ec69E17E1184Ac8209aE03f21939E7960F46BD7",
+          "proxy": false
+        },
+        {
+          "role": "SiloLens",
+          "address": "0xCa22FB764b77661d8D2c3b969E7Aef856795C51C",
+          "proxy": false
+        }
+      ],
+      "source": "https://github.com/silo-finance/silo-contracts-v3/blob/8e2c1b6283ab23c8640a0deaac08520daab3aae1/silo-core/deploy/silo/_siloDeployments.json",
+      "confidence": "high",
+      "note": "Current-generation factory IDs3001 onward. Shared SiloLens supports legacy and current markets; allocator vaults are nonadditive.",
+      "lastReviewed": "2026-09-17"
+    },
+    {
+      "id": "lfj",
+      "name": "LFJ",
+      "category": "Spot DEX",
+      "architecture": "V2 constant-product and Liquidity Book bin-based pools",
+      "contracts": [],
+      "source": "https://developers.lfj.gg",
+      "confidence": "medium",
+      "note": "Factory children are discovered from verified factory events during indexed collection."
+    },
+    {
+      "id": "pharaoh",
+      "name": "Pharaoh",
+      "category": "Spot DEX",
+      "architecture": "concentrated liquidity and DLMM",
+      "contracts": [],
+      "source": "https://docs.pharaoh.exchange",
+      "confidence": "medium"
+    },
+    {
+      "id": "blackhole",
+      "name": "BlackHole",
+      "category": "Spot DEX",
+      "architecture": "V2, Algebra concentrated liquidity, and ve(3,3) gauges",
+      "contracts": [],
+      "source": "https://docs.blackhole.xyz",
+      "confidence": "medium"
+    },
+    {
+      "id": "pangolin",
+      "name": "Pangolin",
+      "category": "Spot DEX",
+      "architecture": "V2 constant-product and concentrated liquidity",
+      "contracts": [],
+      "source": "https://docs.pangolin.exchange",
+      "confidence": "medium"
+    },
+    {
+      "id": "curve",
+      "name": "Curve",
+      "category": "Spot DEX",
+      "architecture": "stable-swap and cryptoswap",
+      "contracts": [],
+      "source": "https://docs.curve.finance/references/deployed-contracts",
+      "confidence": "high"
+    },
+    {
+      "id": "uniswap-v3",
+      "name": "Uniswap V3",
+      "category": "Spot DEX",
+      "architecture": "concentrated liquidity",
+      "contracts": [],
+      "source": "https://docs.uniswap.org/contracts/v3/reference/deployments",
+      "confidence": "high"
+    },
+    {
+      "id": "gmx",
+      "name": "GMX",
+      "category": "Spot and Perpetual DEX",
+      "architecture": "oracle-priced multi-asset liquidity pools",
+      "contracts": [],
+      "source": "https://docs.gmx.io/docs/contracts",
+      "confidence": "high",
+      "note": "Only independently reported spot swaps are included in spot volume; leverage and internal GLP/GM pool rebalances are excluded."
+    },
+    {
+      "id": "buidl",
+      "name": "BlackRock BUIDL",
+      "category": "Tokenized treasury fund",
+      "architecture": "permissioned ERC-20 proxy",
+      "contracts": [
+        {
+          "role": "Token",
+          "address": "0x53fc82f14f009009b440a706e31c9021e1196a2f",
+          "proxy": true,
+          "implementation": "0xf93667d01c7675e2667ee392aa69104df79c4ad0"
+        }
+      ],
+      "source": "Securitize issuer data, verified bytecode, and DeFiLlama token TVL",
+      "confidence": "high",
+      "issuer": "BlackRock / Securitize",
+      "issuerUrl": "https://www.blackrock.com/corporate/newsroom/press-releases/article/corporate-one/press-releases/blackrock-launches-first-tokenized-fund-buidl-on-the-ethereum-network",
+      "productUrl": "https://securitize.io/learn/press/blackrock-buidl-expands-to-multi-chains",
+      "sourceLinks": [
+        "https://securitize.io/learn/press/blackrock-buidl-expands-to-multi-chains",
+        "https://snowtrace.io/address/0x53fc82f14f009009b440a706e31c9021e1196a2f"
+      ],
+      "classification": "verified-native-issuance",
+      "valuationBasis": "Canonical Avalanche Gateway exact supply \u00d7 validated RedStone feed; source timestamps and retained/stale state are preserved."
+    },
+    {
+      "id": "vbill",
+      "name": "VanEck VBILL",
+      "category": "Tokenized treasury fund",
+      "architecture": "permissioned ERC-20 proxy",
+      "contracts": [
+        {
+          "role": "Token",
+          "address": "0x7f4546ef315efc65336187fe3765ea779ac90183",
+          "proxy": true,
+          "implementation": "0xc7579a9a4801a805b66742e5bd56a1581705fe0d"
+        }
+      ],
+      "source": "Securitize issuer data, verified bytecode, and DeFiLlama token TVL",
+      "confidence": "high",
+      "issuer": "VanEck / Securitize",
+      "issuerUrl": "https://www.vaneck.com/us/en/investments/vaneck-treasury-fund/",
+      "productUrl": "https://securitize.io/learn/press/vaneck-launches-tokenized-treasury-fund-vbill-on-securitize",
+      "sourceLinks": [
+        "https://www.vaneck.com/us/en/investments/vaneck-treasury-fund/",
+        "https://snowtrace.io/address/0x7f4546ef315efc65336187fe3765ea779ac90183"
+      ],
+      "classification": "verified-native-issuance",
+      "valuationBasis": "Canonical Avalanche Gateway exact supply \u00d7 validated RedStone feed; source timestamps and retained/stale state are preserved."
+    },
+    {
+      "id": "acred",
+      "name": "Apollo ACRED",
+      "category": "Tokenized private credit fund",
+      "architecture": "permissioned ERC-20 proxy",
+      "contracts": [
+        {
+          "role": "Token",
+          "address": "0x7c64925002bfa705834b118a923e9911bee32875",
+          "proxy": true,
+          "implementation": "0x3bfcfc2b71aad49c46767f8ec2aba78fbdaad407"
+        }
+      ],
+      "source": "Securitize issuer data, verified bytecode, and DeFiLlama token TVL",
+      "confidence": "high",
+      "issuer": "Apollo / Securitize",
+      "issuerUrl": "https://securitize.io/learn/press/apollo-and-securitize-announce-partnership-and-launch-tokenized-access-to-credit-fund",
+      "productUrl": "https://securitize.io/learn/press/apollo-and-securitize-announce-partnership-and-launch-tokenized-access-to-credit-fund",
+      "sourceLinks": [
+        "https://securitize.io/learn/press/apollo-and-securitize-announce-partnership-and-launch-tokenized-access-to-credit-fund",
+        "https://snowtrace.io/address/0x7c64925002bfa705834b118a923e9911bee32875"
+      ],
+      "classification": "verified-native-issuance",
+      "valuationBasis": "Canonical Avalanche Gateway exact supply \u00d7 validated RedStone feed; source timestamps and retained/stale state are preserved."
+    },
+    {
+      "id": "secz",
+      "name": "Securitize SECZ",
+      "category": "Tokenized public equity",
+      "architecture": "permissioned ERC-20",
+      "contracts": [
+        {
+          "role": "Token",
+          "address": "0x5954fF4099ac47C4d6D098A9216f3278BB8C9506",
+          "proxy": true,
+          "implementation": "0x18295407744efa5c3fed0318c1f37abe8a5e2d45"
+        }
+      ],
+      "source": "Securitize issuer announcement and verified onchain metadata",
+      "confidence": "high",
+      "issuer": "Securitize",
+      "issuerUrl": "https://securitize.io/",
+      "productUrl": "https://securitize.io/",
+      "sourceLinks": [
+        "https://securitize.io/",
+        "https://snowtrace.io/address/0x5954fF4099ac47C4d6D098A9216f3278BB8C9506"
+      ],
+      "classification": "verified-native-issuance",
+      "valuationBasis": "Canonical Avalanche Gateway exact supply \u00d7 validated RedStone feed; source timestamps and retained/stale state are preserved.",
+      "note": "Value uses the validated RedStone SECZ_EOD end-of-day equity price; it is not NAV or an intraday quote."
+    }
+  ]
+}

@@ -1,0 +1,982 @@
+{
+  "schema": "couchdicks.avalanche.blockspace.v1",
+  "generatedAt": "2026-09-18T06:09:27.353Z",
+  "source": "local-avacache-parquet",
+  "coverage": {
+    "start": "2026-09-11",
+    "end": "2026-09-17",
+    "days": 7,
+    "completeDaysOnly": true
+  },
+  "definitions": {
+    "activeAddresses": "Distinct transaction senders per UTC day.",
+    "contractCreations": "Top-level transactions without a destination; internal CREATE/CREATE2 calls excluded.",
+    "fees": "Receipt gas used multiplied by effective gas price. Avalanche C-Chain burns transaction fees.",
+    "throughput": "Daily transaction or gas total divided by 86,400 seconds; not peak throughput."
+  },
+  "daily": [
+    {
+      "date": "2026-09-11",
+      "transactions": 1080640,
+      "active_addresses": 26535,
+      "contract_creations": 200,
+      "failed_transactions": 70380,
+      "average_gas_price_gwei": 5.137184101218077,
+      "average_fee_avax": 0.0007424039542536326,
+      "median_fee_avax": 0.00001151813207699,
+      "fees_burned_avax": 802.2714091246455,
+      "gas_used": 345374944644,
+      "blocks": 80839,
+      "first_block": 94975711,
+      "last_block": 95056549,
+      "average_block_utilization_pct": 10.680950551219102,
+      "average_base_fee_gwei": 0.1279642122052846,
+      "first_timestamp": 1789084800,
+      "last_timestamp": 1789171199,
+      "throughput_tps": 12.507407407407408,
+      "throughput_mgas_s": 3.997395192638889,
+      "failure_rate_pct": 6.512807225347942,
+      "partial": false
+    },
+    {
+      "date": "2026-09-12",
+      "transactions": 504762,
+      "active_addresses": 17987,
+      "contract_creations": 543,
+      "failed_transactions": 25997,
+      "average_gas_price_gwei": 1.8668788641328369,
+      "average_fee_avax": 0.00033696717859952495,
+      "median_fee_avax": 0.0000141143432078775,
+      "fees_burned_avax": 170.0882270042534,
+      "gas_used": 345679965424,
+      "blocks": 81614,
+      "first_block": 95056550,
+      "last_block": 95138163,
+      "average_block_utilization_pct": 10.588868497561993,
+      "average_base_fee_gwei": 0.06974978137884431,
+      "first_timestamp": 1789171200,
+      "last_timestamp": 1789257599,
+      "throughput_tps": 5.842152777777778,
+      "throughput_mgas_s": 4.000925525740741,
+      "failure_rate_pct": 5.150348084839984,
+      "partial": false
+    },
+    {
+      "date": "2026-09-13",
+      "transactions": 543677,
+      "active_addresses": 22716,
+      "contract_creations": 758,
+      "failed_transactions": 29440,
+      "average_gas_price_gwei": 2.8292622974230435,
+      "average_fee_avax": 0.0004674323457230203,
+      "median_fee_avax": 0.000014133774704514,
+      "fees_burned_avax": 254.13221542565452,
+      "gas_used": 345444496236,
+      "blocks": 81790,
+      "first_block": 95138164,
+      "last_block": 95219953,
+      "average_block_utilization_pct": 10.558885445531446,
+      "average_base_fee_gwei": 0.06577389576566818,
+      "first_timestamp": 1789257600,
+      "last_timestamp": 1789343999,
+      "throughput_tps": 6.29255787037037,
+      "throughput_mgas_s": 3.998200187916667,
+      "failure_rate_pct": 5.414979850168391,
+      "partial": false
+    },
+    {
+      "date": "2026-09-14",
+      "transactions": 672183,
+      "active_addresses": 22590,
+      "contract_creations": 949,
+      "failed_transactions": 49028,
+      "average_gas_price_gwei": 5.632283628080073,
+      "average_fee_avax": 0.0008706596783187137,
+      "median_fee_avax": 0.0000168590089542,
+      "fees_burned_avax": 585.2426345513079,
+      "gas_used": 345752991709,
+      "blocks": 82190,
+      "first_block": 95219954,
+      "last_block": 95302143,
+      "average_block_utilization_pct": 10.516881363578227,
+      "average_base_fee_gwei": 0.06603108235764692,
+      "first_timestamp": 1789344000,
+      "last_timestamp": 1789430399,
+      "throughput_tps": 7.779895833333334,
+      "throughput_mgas_s": 4.001770737372685,
+      "failure_rate_pct": 7.293847062481497,
+      "partial": false
+    },
+    {
+      "date": "2026-09-15",
+      "transactions": 718800,
+      "active_addresses": 22103,
+      "contract_creations": 2998,
+      "failed_transactions": 62883,
+      "average_gas_price_gwei": 7.724157992200748,
+      "average_fee_avax": 0.001076227371084112,
+      "median_fee_avax": 0.00001729034217561,
+      "fees_burned_avax": 773.5922343352597,
+      "gas_used": 345594057679,
+      "blocks": 81429,
+      "first_block": 95302144,
+      "last_block": 95383572,
+      "average_block_utilization_pct": 10.610288032488395,
+      "average_base_fee_gwei": 0.08083974295157745,
+      "first_timestamp": 1789430400,
+      "last_timestamp": 1789516799,
+      "throughput_tps": 8.319444444444445,
+      "throughput_mgas_s": 3.9999312231365742,
+      "failure_rate_pct": 8.748330550918197,
+      "partial": false
+    },
+    {
+      "date": "2026-09-16",
+      "transactions": 672231,
+      "active_addresses": 23109,
+      "contract_creations": 2537,
+      "failed_transactions": 71673,
+      "average_gas_price_gwei": 6.873830562456231,
+      "average_fee_avax": 0.0010108246923074536,
+      "median_fee_avax": 0.000014518234177536,
+      "fees_burned_avax": 679.5076937345318,
+      "gas_used": 345579606129,
+      "blocks": 80788,
+      "first_block": 95383573,
+      "last_block": 95464360,
+      "average_block_utilization_pct": 10.694026530208557,
+      "average_base_fee_gwei": 0.062354971597254547,
+      "first_timestamp": 1789516800,
+      "last_timestamp": 1789603199,
+      "throughput_tps": 7.780451388888889,
+      "throughput_mgas_s": 3.9997639598263888,
+      "failure_rate_pct": 10.661959951266752,
+      "partial": false
+    },
+    {
+      "date": "2026-09-17",
+      "transactions": 640959,
+      "active_addresses": 20340,
+      "contract_creations": 2628,
+      "failed_transactions": 217295,
+      "average_gas_price_gwei": 4.5564119564459755,
+      "average_fee_avax": 0.0006713700067578048,
+      "median_fee_avax": 0.000012153141314594,
+      "fees_burned_avax": 430.3206481614759,
+      "gas_used": 345543998687,
+      "blocks": 82319,
+      "first_block": 95464361,
+      "last_block": 95546679,
+      "average_block_utilization_pct": 10.494053580795592,
+      "average_base_fee_gwei": 0.062361452569674077,
+      "first_timestamp": 1789603200,
+      "last_timestamp": 1789689599,
+      "throughput_tps": 7.418506944444444,
+      "throughput_mgas_s": 3.9993518366550926,
+      "failure_rate_pct": 33.9015444045563,
+      "partial": false
+    }
+  ],
+  "topContracts": [
+    {
+      "address": "0xf50b2ed32426131177e847f65af6f6383fd44aa3",
+      "gas_used": 537702404546,
+      "fees_burned_avax": 37.355950265030444,
+      "transactions": 19641,
+      "unique_senders": 8,
+      "active_days": 7
+    },
+    {
+      "address": "0x350b239e26690202e2a2d46f55a844e4396f0485",
+      "gas_used": 507601074059,
+      "fees_burned_avax": 33.96694814671185,
+      "transactions": 84718,
+      "unique_senders": 1,
+      "active_days": 7
+    },
+    {
+      "address": "0x62e9717d4da8f86422b62f558e173b3e74b97dfd",
+      "gas_used": 397240108103,
+      "fees_burned_avax": 23.96721292502233,
+      "transactions": 33658,
+      "unique_senders": 1,
+      "active_days": 6
+    },
+    {
+      "address": "0xcecafd906c3763d9cf2f2e2a24e96f3ee606eec1",
+      "gas_used": 165068671380,
+      "fees_burned_avax": 11.589110156308363,
+      "transactions": 627105,
+      "unique_senders": 1,
+      "active_days": 7
+    },
+    {
+      "address": "0x9ec1c3dcf667f2035fb4cd2eb42a1566fd54d2b7",
+      "gas_used": 78074112732,
+      "fees_burned_avax": 4.70321760571891,
+      "transactions": 17537,
+      "unique_senders": 25,
+      "active_days": 7
+    },
+    {
+      "address": "0x745c4638e5d0f54dc99658dea7d8d5bf46083443",
+      "gas_used": 64791605804,
+      "fees_burned_avax": 5.963501578701502,
+      "transactions": 24876,
+      "unique_senders": 14,
+      "active_days": 7
+    },
+    {
+      "address": "0x30f7d00aa7c3b45b78bb8b844150d8d5892de161",
+      "gas_used": 45279895368,
+      "fees_burned_avax": 70.87632555253977,
+      "transactions": 8109,
+      "unique_senders": 1344,
+      "active_days": 7
+    },
+    {
+      "address": "0x757121c9a8259c4d6b6956c283355b2902a6baa2",
+      "gas_used": 29598564456,
+      "fees_burned_avax": 4.849686142888734,
+      "transactions": 101566,
+      "unique_senders": 56,
+      "active_days": 7
+    },
+    {
+      "address": "0x28d9ccedf1b7ac9b3f090f4f0292837de87c1d39",
+      "gas_used": 28215709711,
+      "fees_burned_avax": 31.76445321899646,
+      "transactions": 881917,
+      "unique_senders": 100,
+      "active_days": 7
+    },
+    {
+      "address": "0x5338b47591d455dcc63fecbcd60a4b60f7467034",
+      "gas_used": 28164406301,
+      "fees_burned_avax": 2.461626800667864,
+      "transactions": 10552,
+      "unique_senders": 19,
+      "active_days": 2
+    },
+    {
+      "address": "0x030fd6aef18f30b545e359dc8fe99f94c149ad8a",
+      "gas_used": 25378450153,
+      "fees_burned_avax": 2.1126594277291066,
+      "transactions": 11660,
+      "unique_senders": 74,
+      "active_days": 7
+    },
+    {
+      "address": "0xa2ecb675ad2a2e199c98f5206c5c3ffe5a8d5753",
+      "gas_used": 24413585155,
+      "fees_burned_avax": 1.9908363773047195,
+      "transactions": 343539,
+      "unique_senders": 105,
+      "active_days": 5
+    },
+    {
+      "address": "0x000000003304cc6fd1e5bbf851762ed988736af3",
+      "gas_used": 15228462877,
+      "fees_burned_avax": 17.850057234964808,
+      "transactions": 69071,
+      "unique_senders": 48,
+      "active_days": 7
+    },
+    {
+      "address": "0x33176be288e54c440941d407df33456a23ede078",
+      "gas_used": 13746045480,
+      "fees_burned_avax": 2.284160545465556,
+      "transactions": 508456,
+      "unique_senders": 1,
+      "active_days": 7
+    },
+    {
+      "address": "0x0dc40a3b9a4740cb50c3ee1447a6f24d04a044fd",
+      "gas_used": 13036117550,
+      "fees_burned_avax": 1.4962861905597753,
+      "transactions": 35735,
+      "unique_senders": 10,
+      "active_days": 5
+    },
+    {
+      "address": "0x6131b5fae19ea4f9d964eac0408e4408b66337b5",
+      "gas_used": 12421360302,
+      "fees_burned_avax": 23.044451922360032,
+      "transactions": 17581,
+      "unique_senders": 641,
+      "active_days": 7
+    },
+    {
+      "address": "0x278d858f05b94576c1e6f73285886876ff6ef8d2",
+      "gas_used": 12082029840,
+      "fees_burned_avax": 303.27276124022575,
+      "transactions": 77831,
+      "unique_senders": 47,
+      "active_days": 7
+    },
+    {
+      "address": "0xff2befc4ff86cb0f3e8d3d9d6200b7a05bf5d93d",
+      "gas_used": 11805248076,
+      "fees_burned_avax": 12.257770940207598,
+      "transactions": 35314,
+      "unique_senders": 108,
+      "active_days": 7
+    },
+    {
+      "address": "0x0ac011eb02a44d3fd7ad2e837a9f5a330913af13",
+      "gas_used": 11511203935,
+      "fees_burned_avax": 1355.4311431211306,
+      "transactions": 57679,
+      "unique_senders": 2,
+      "active_days": 7
+    },
+    {
+      "address": "0x94d9e02d115646dfc407abde75fa45256d66e043",
+      "gas_used": 10984216154,
+      "fees_burned_avax": 0.82729280139617,
+      "transactions": 1033,
+      "unique_senders": 27,
+      "active_days": 7
+    },
+    {
+      "address": "0x20b45049b58a2195a5465b8716135039ef70a719",
+      "gas_used": 10524946116,
+      "fees_burned_avax": 2.537177222868363,
+      "transactions": 39007,
+      "unique_senders": 3,
+      "active_days": 7
+    },
+    {
+      "address": "0x92d4ee32bc0f81dbb9923073395a2be7febbc3e5",
+      "gas_used": 9962411919,
+      "fees_burned_avax": 0.825866800129291,
+      "transactions": 58121,
+      "unique_senders": 11,
+      "active_days": 7
+    },
+    {
+      "address": "0x9759fa90eb87b915dabcc312d6a59ecff8067334",
+      "gas_used": 9389506354,
+      "fees_burned_avax": 10.08976293668179,
+      "transactions": 27699,
+      "unique_senders": 8,
+      "active_days": 7
+    },
+    {
+      "address": "0xb0204e0943e72ccdf5cf1089cd402c9b3e11a01d",
+      "gas_used": 9016860726,
+      "fees_burned_avax": 21.582853931370963,
+      "transactions": 6541,
+      "unique_senders": 1,
+      "active_days": 7
+    },
+    {
+      "address": "0x18ae1a33044b9b4ccc85dc44da8bb03b86f06600",
+      "gas_used": 8878981797,
+      "fees_burned_avax": 0.46637631537120516,
+      "transactions": 479,
+      "unique_senders": 30,
+      "active_days": 7
+    },
+    {
+      "address": "0x087befdbcf63c7d0d5d96499e66daa8d43da9790",
+      "gas_used": 8711374659,
+      "fees_burned_avax": 1.194586558898778,
+      "transactions": 12884,
+      "unique_senders": 1,
+      "active_days": 7
+    },
+    {
+      "address": "0x6c081e70c5a6ef81d10aea448fcd9cc03967b027",
+      "gas_used": 8704289779,
+      "fees_burned_avax": 3.4092606053915913,
+      "transactions": 18890,
+      "unique_senders": 5,
+      "active_days": 7
+    },
+    {
+      "address": "0xb2971578b207923a7ae74ebc48b435c9c0b2815d",
+      "gas_used": 8157886885,
+      "fees_burned_avax": 6.123774482335357,
+      "transactions": 41589,
+      "unique_senders": 1,
+      "active_days": 7
+    },
+    {
+      "address": "0x1f9317125b60739da6f91421728c8ad46fe9b321",
+      "gas_used": 7457918014,
+      "fees_burned_avax": 14.736879040110164,
+      "transactions": 18618,
+      "unique_senders": 40,
+      "active_days": 7
+    },
+    {
+      "address": "0x40ac2e93d1257196a418fce7d6edacde65aaf2ba",
+      "gas_used": 7020021669,
+      "fees_burned_avax": 0.43586368441244216,
+      "transactions": 1701,
+      "unique_senders": 1,
+      "active_days": 1
+    },
+    {
+      "address": "0xc993ef170859dae0241a3c12b8186e456fa1c1b0",
+      "gas_used": 6906286024,
+      "fees_burned_avax": 5.234199349247268,
+      "transactions": 1876,
+      "unique_senders": 20,
+      "active_days": 7
+    },
+    {
+      "address": "0x9f44f71015b75522f88a6f7d3d6809a7b6679b53",
+      "gas_used": 6212515624,
+      "fees_burned_avax": 0.9609594464108921,
+      "transactions": 16687,
+      "unique_senders": 10,
+      "active_days": 3
+    },
+    {
+      "address": "0x5bbb435ec20154f016ee96041c3fdfe46354603a",
+      "gas_used": 5724781746,
+      "fees_burned_avax": 22.428983315224695,
+      "transactions": 28345,
+      "unique_senders": 3,
+      "active_days": 7
+    },
+    {
+      "address": "0x630a6fe8622792adb6865c8915a166e7f750c8b6",
+      "gas_used": 5479391412,
+      "fees_burned_avax": 2.5574740966857146,
+      "transactions": 15690,
+      "unique_senders": 1,
+      "active_days": 7
+    },
+    {
+      "address": "0xe5d577b7e58fa1a9c3181dd6faa882b1e43564aa",
+      "gas_used": 5299594757,
+      "fees_burned_avax": 6.0967924124491155,
+      "transactions": 13613,
+      "unique_senders": 22,
+      "active_days": 5
+    },
+    {
+      "address": "0x191adfd519058bf928c925851ab55df7d4d3eab6",
+      "gas_used": 5205323716,
+      "fees_burned_avax": 8.198618882651838,
+      "transactions": 1350,
+      "unique_senders": 222,
+      "active_days": 7
+    },
+    {
+      "address": "0x9702230a8ea53601f5cd2dc00fdbc13d4df4a8c7",
+      "gas_used": 5202990087,
+      "fees_burned_avax": 24.88327783411014,
+      "transactions": 102450,
+      "unique_senders": 29841,
+      "active_days": 7
+    },
+    {
+      "address": "0xd1f6ca075b345c3532ee3957f0a32a0a0c881449",
+      "gas_used": 5062600918,
+      "fees_burned_avax": 12.929586059258135,
+      "transactions": 20367,
+      "unique_senders": 4,
+      "active_days": 7
+    },
+    {
+      "address": "0xcce9174424bdd18ef444846bdaccecd8ebbad550",
+      "gas_used": 4102239565,
+      "fees_burned_avax": 514.5836635765561,
+      "transactions": 44821,
+      "unique_senders": 66,
+      "active_days": 7
+    },
+    {
+      "address": "0xba97b395d7aeed1491a3929413320ddb480dacf5",
+      "gas_used": 4005007803,
+      "fees_burned_avax": 7.442463303524383,
+      "transactions": 5484,
+      "unique_senders": 5,
+      "active_days": 7
+    },
+    {
+      "address": "0x614102d00341c93b182c87935a4d5a9f0b5402b7",
+      "gas_used": 4001978214,
+      "fees_burned_avax": 0.5479357396949491,
+      "transactions": 1257,
+      "unique_senders": 1,
+      "active_days": 5
+    },
+    {
+      "address": "0x20f6ee51340adeed01a59b0e65cb3703f3dc860c",
+      "gas_used": 3966223146,
+      "fees_burned_avax": 3.202305120869298,
+      "transactions": 2245,
+      "unique_senders": 84,
+      "active_days": 7
+    },
+    {
+      "address": "0x2eb1aedd04573fd80cc1d216d317550dd409b7e7",
+      "gas_used": 3948005263,
+      "fees_burned_avax": 5.911726707124343,
+      "transactions": 601,
+      "unique_senders": 219,
+      "active_days": 7
+    },
+    {
+      "address": "0x8c2ffd41eb019de4e74e19f39394fe517039b461",
+      "gas_used": 3933377937,
+      "fees_burned_avax": 0.2802999569113574,
+      "transactions": 22797,
+      "unique_senders": 1,
+      "active_days": 7
+    },
+    {
+      "address": "0x0000000000001ff3684f28c67538d4d072c22734",
+      "gas_used": 3861427826,
+      "fees_burned_avax": 4.716100326771852,
+      "transactions": 7689,
+      "unique_senders": 676,
+      "active_days": 7
+    },
+    {
+      "address": "0x253b2784c75e510dd0ff1da844684a1ac0aa5fcf",
+      "gas_used": 3815808812,
+      "fees_burned_avax": 2.843991647000282,
+      "transactions": 10898,
+      "unique_senders": 13,
+      "active_days": 7
+    },
+    {
+      "address": "0x06c13f4650c25ec8395fb62de9a5a3d3e8ca67a0",
+      "gas_used": 3603097287,
+      "fees_burned_avax": 2.048163321239937,
+      "transactions": 5914,
+      "unique_senders": 68,
+      "active_days": 7
+    },
+    {
+      "address": "0xafcba3f353b68b8f24d53ce4d6dcf6b667cdfff9",
+      "gas_used": 3560075100,
+      "fees_burned_avax": 0.23908374008590125,
+      "transactions": 53259,
+      "unique_senders": 1,
+      "active_days": 2
+    },
+    {
+      "address": "0x2f81e039964f637a7874d756464924f25e280ba5",
+      "gas_used": 3559804394,
+      "fees_burned_avax": 0.23900028493867526,
+      "transactions": 53257,
+      "unique_senders": 1,
+      "active_days": 2
+    },
+    {
+      "address": "0x6f58058ec15bacf583a7d10aaa11672c92f1c7f9",
+      "gas_used": 3559523194,
+      "fees_burned_avax": 0.23902408464612365,
+      "transactions": 53251,
+      "unique_senders": 1,
+      "active_days": 2
+    },
+    {
+      "address": "0xa75d8bc4f67441e98335363f5519e8110b96bc82",
+      "gas_used": 3399114952,
+      "fees_burned_avax": 0.3115790914054297,
+      "transactions": 1160,
+      "unique_senders": 1,
+      "active_days": 7
+    },
+    {
+      "address": "0x4ec53317186098956956ae9a7092853e218390e2",
+      "gas_used": 3389262519,
+      "fees_burned_avax": 5.701467084319838,
+      "transactions": 2136,
+      "unique_senders": 1,
+      "active_days": 7
+    },
+    {
+      "address": "0xb97ef9ef8734c71904d8002f8b6bc66dd9c48a6e",
+      "gas_used": 3077819139,
+      "fees_burned_avax": 4.2525484719476,
+      "transactions": 53914,
+      "unique_senders": 14606,
+      "active_days": 7
+    },
+    {
+      "address": "0x42b499ea6eb944e63ff248c3f568f4dbdf0bcd7f",
+      "gas_used": 3060150785,
+      "fees_burned_avax": 0.22960739724788148,
+      "transactions": 5559,
+      "unique_senders": 12,
+      "active_days": 3
+    },
+    {
+      "address": "0xc005a9bb11f162329f3efccc35f69f9bb635eec6",
+      "gas_used": 2973829300,
+      "fees_burned_avax": 0.7408861293483627,
+      "transactions": 40243,
+      "unique_senders": 1,
+      "active_days": 7
+    },
+    {
+      "address": "0x2c0caa337e8da907cf5cfd4e7001ba677d436d03",
+      "gas_used": 2904694205,
+      "fees_burned_avax": 0.9522185571061532,
+      "transactions": 1940,
+      "unique_senders": 20,
+      "active_days": 7
+    },
+    {
+      "address": "0xabfc48e8bed7b26762745f3139555f320119709d",
+      "gas_used": 2646156330,
+      "fees_burned_avax": 1.8017260607571943,
+      "transactions": 17564,
+      "unique_senders": 5,
+      "active_days": 7
+    },
+    {
+      "address": "0x2d85e135581a514275d6d650c57b9a14abb9a700",
+      "gas_used": 2638854330,
+      "fees_burned_avax": 10.972052133599668,
+      "transactions": 12200,
+      "unique_senders": 8,
+      "active_days": 7
+    },
+    {
+      "address": "0x5222a930cceae2d902f1a5fb7262a630a2f83e7e",
+      "gas_used": 2515747339,
+      "fees_burned_avax": 0.40813681252189005,
+      "transactions": 14343,
+      "unique_senders": 20,
+      "active_days": 7
+    },
+    {
+      "address": "0x3c8a03f5c520d6d97a06ffa8cd6f5363090c6d0d",
+      "gas_used": 2434767781,
+      "fees_burned_avax": 0.36034702312925143,
+      "transactions": 15564,
+      "unique_senders": 2,
+      "active_days": 7
+    },
+    {
+      "address": "0xccc88a9d1b4ed6b0eaba998850414b24f1c315be",
+      "gas_used": 2306684811,
+      "fees_burned_avax": 0.5945942890879282,
+      "transactions": 3936,
+      "unique_senders": 461,
+      "active_days": 7
+    },
+    {
+      "address": "0xeb9757a248f07472bd0fa02d700fb49c78e2067c",
+      "gas_used": 2161264371,
+      "fees_burned_avax": 310.8080650333468,
+      "transactions": 13000,
+      "unique_senders": 66,
+      "active_days": 7
+    },
+    {
+      "address": "0x2ab6e7599372ebaedc0329379a9d97402a7bcadd",
+      "gas_used": 2151626876,
+      "fees_burned_avax": 0.3977933716241525,
+      "transactions": 7082,
+      "unique_senders": 1,
+      "active_days": 6
+    },
+    {
+      "address": "0x5fe05d2c877670ad1fca8f1f8482fd9ded2c9279",
+      "gas_used": 2043498923,
+      "fees_burned_avax": 0.24223458721604024,
+      "transactions": 864,
+      "unique_senders": 1,
+      "active_days": 7
+    },
+    {
+      "address": "0xbd80d70e690373dfc6daaa39770ad013c2f583fd",
+      "gas_used": 2005729786,
+      "fees_burned_avax": 0.36192352130797095,
+      "transactions": 636,
+      "unique_senders": 1,
+      "active_days": 4
+    },
+    {
+      "address": "0x45a62b090df48243f12a21897e7ed91863e2c86b",
+      "gas_used": 1855517267,
+      "fees_burned_avax": 3.12966429891263,
+      "transactions": 2143,
+      "unique_senders": 462,
+      "active_days": 7
+    },
+    {
+      "address": "0x0b4478e810d48b5882d4019d435a2f864bab4f39",
+      "gas_used": 1827475596,
+      "fees_burned_avax": 0.6712319566094058,
+      "transactions": 1530,
+      "unique_senders": 108,
+      "active_days": 7
+    },
+    {
+      "address": "0x51fe0b7919e1208a717e9b16a097c1c3d70efbf6",
+      "gas_used": 1772312141,
+      "fees_burned_avax": 1.0363985102122335,
+      "transactions": 895,
+      "unique_senders": 20,
+      "active_days": 7
+    },
+    {
+      "address": "0x2e6fcbb9d4e17ec4cf67eddfa7d32eabc4cdcfc6",
+      "gas_used": 1768959804,
+      "fees_burned_avax": 0.12394126204476653,
+      "transactions": 82817,
+      "unique_senders": 1,
+      "active_days": 3
+    },
+    {
+      "address": "0x9daea9462ff3dd535643e07be587517a9790acc5",
+      "gas_used": 1764235655,
+      "fees_burned_avax": 0.6746037997939747,
+      "transactions": 12787,
+      "unique_senders": 1,
+      "active_days": 7
+    },
+    {
+      "address": "0x23bafd10c7c15eaff7754d624bc660cbaa7d2ec9",
+      "gas_used": 1753872433,
+      "fees_burned_avax": 0.30024704612602815,
+      "transactions": 1216,
+      "unique_senders": 1,
+      "active_days": 7
+    },
+    {
+      "address": "0xf9b0c8ee13ae2fc0665764ecbdb417685dea8081",
+      "gas_used": 1738967042,
+      "fees_burned_avax": 0.6632329543888464,
+      "transactions": 36015,
+      "unique_senders": 2,
+      "active_days": 7
+    },
+    {
+      "address": "0xaa40783a00855784307c4dc9fd7acfb96cb90915",
+      "gas_used": 1714994980,
+      "fees_burned_avax": 10.518905534008367,
+      "transactions": 4480,
+      "unique_senders": 10,
+      "active_days": 7
+    },
+    {
+      "address": "0xa5b94d5c7b0c267b86ffc7b7af16b7cbf879721f",
+      "gas_used": 1712952267,
+      "fees_burned_avax": 106.01886631281204,
+      "transactions": 10473,
+      "unique_senders": 24,
+      "active_days": 7
+    },
+    {
+      "address": "0x09fc9b7545020f6a51d113e495e0a451597969d3",
+      "gas_used": 1687044988,
+      "fees_burned_avax": 1.0187877738916715,
+      "transactions": 3166,
+      "unique_senders": 20,
+      "active_days": 7
+    },
+    {
+      "address": "0x2d5a1a64af27c54dbd6c68f06d3cc52222713ead",
+      "gas_used": 1685940880,
+      "fees_burned_avax": 0.5327221310479942,
+      "transactions": 117,
+      "unique_senders": 1,
+      "active_days": 1
+    },
+    {
+      "address": "0x0514830cdf85b444f8599325d9b8072f6c1c5549",
+      "gas_used": 1670087225,
+      "fees_burned_avax": 0.5854743780015929,
+      "transactions": 2612,
+      "unique_senders": 20,
+      "active_days": 7
+    },
+    {
+      "address": "0x20cbeb09cbdeeda0cbc41eb7884f151ec900cdd4",
+      "gas_used": 1649616108,
+      "fees_burned_avax": 0.2688541931785193,
+      "transactions": 1993,
+      "unique_senders": 1,
+      "active_days": 7
+    },
+    {
+      "address": "0x936385b7aaaf73e089360c571f11e3d39561372f",
+      "gas_used": 1621027056,
+      "fees_burned_avax": 3.1560882326090853,
+      "transactions": 4620,
+      "unique_senders": 1,
+      "active_days": 7
+    },
+    {
+      "address": "0x5ff137d4b0fdcd49dca30c7cf57e578a026d2789",
+      "gas_used": 1568938221,
+      "fees_burned_avax": 1.3116038469786673,
+      "transactions": 6833,
+      "unique_senders": 14,
+      "active_days": 7
+    },
+    {
+      "address": "0xf57c3cecf9c2e0290f1f7be2275e0b89b538fb44",
+      "gas_used": 1518454510,
+      "fees_burned_avax": 3.6661450270564178,
+      "transactions": 823,
+      "unique_senders": 1,
+      "active_days": 7
+    },
+    {
+      "address": "0xbb00ff08d01d300023c629e8ffffcb65a5a578ce",
+      "gas_used": 1502307234,
+      "fees_burned_avax": 2.5148090247317176,
+      "transactions": 12235,
+      "unique_senders": 90,
+      "active_days": 7
+    },
+    {
+      "address": "0x0000000071727de22e5e9d8baf0edac6f37da032",
+      "gas_used": 1470987567,
+      "fees_burned_avax": 1.4655944565337407,
+      "transactions": 6621,
+      "unique_senders": 17,
+      "active_days": 7
+    },
+    {
+      "address": "0x6a000f20005980200259b80c5102003040001068",
+      "gas_used": 1461962870,
+      "fees_burned_avax": 2.893869793729012,
+      "transactions": 2973,
+      "unique_senders": 155,
+      "active_days": 7
+    },
+    {
+      "address": "0x1a36fa0ac940902f1490e5237dbfeddd5663121a",
+      "gas_used": 1451105681,
+      "fees_burned_avax": 0.5241218588776558,
+      "transactions": 2597,
+      "unique_senders": 20,
+      "active_days": 7
+    },
+    {
+      "address": "0x9904ffeb660611faf51392dc8bac34c4a448d599",
+      "gas_used": 1449826192,
+      "fees_burned_avax": 0.5343005379768982,
+      "transactions": 4265,
+      "unique_senders": 426,
+      "active_days": 7
+    },
+    {
+      "address": "0x9eed160d7d8253dec1a2a512e504de5e7ff3c111",
+      "gas_used": 1446175327,
+      "fees_burned_avax": 1.3494401674974803,
+      "transactions": 1327,
+      "unique_senders": 320,
+      "active_days": 7
+    },
+    {
+      "address": "0x138ce0008f7febdcffdf27c0ad156584eca7d5b6",
+      "gas_used": 1268055230,
+      "fees_burned_avax": 0.6581159656648947,
+      "transactions": 6443,
+      "unique_senders": 77,
+      "active_days": 7
+    },
+    {
+      "address": "0x1231deb6f5749ef6ce6943a275a1d3e7486f4eae",
+      "gas_used": 1264472091,
+      "fees_burned_avax": 0.5969955577092797,
+      "transactions": 2222,
+      "unique_senders": 1371,
+      "active_days": 7
+    },
+    {
+      "address": "0x777e0fc6d730cc42b853dc66e9fa1d8700000000",
+      "gas_used": 1261504501,
+      "fees_burned_avax": 44.91323554293569,
+      "transactions": 4427,
+      "unique_senders": 17,
+      "active_days": 7
+    },
+    {
+      "address": "0x27d8d5d536581daaf743abaf339f4658e9a553ba",
+      "gas_used": 1257582524,
+      "fees_burned_avax": 2.3069715942574085,
+      "transactions": 1621,
+      "unique_senders": 38,
+      "active_days": 7
+    },
+    {
+      "address": "0x9cde401c8f19fd7648c1fca95438062ee3600bbd",
+      "gas_used": 1229785048,
+      "fees_burned_avax": 0.291176150196,
+      "transactions": 2844,
+      "unique_senders": 1,
+      "active_days": 7
+    },
+    {
+      "address": "0x9a1d15db004dce608dc738bc6762f384fd3d1a9f",
+      "gas_used": 1229280750,
+      "fees_burned_avax": 0.09402929442116306,
+      "transactions": 17735,
+      "unique_senders": 112,
+      "active_days": 7
+    },
+    {
+      "address": "0x5eba459213546091e74e1fb6d2e7ae05fb65ec0f",
+      "gas_used": 1204020114,
+      "fees_burned_avax": 206.7918255164667,
+      "transactions": 12040,
+      "unique_senders": 22,
+      "active_days": 7
+    },
+    {
+      "address": "0x4bef02f3dac22707fcb0aa054962fd4d2041726d",
+      "gas_used": 1197938327,
+      "fees_burned_avax": 1.2897418687893678,
+      "transactions": 7722,
+      "unique_senders": 1,
+      "active_days": 7
+    },
+    {
+      "address": "0x27f6358aaa8b0f400ef09135f9bdf267c7b2fc28",
+      "gas_used": 1173038523,
+      "fees_burned_avax": 0.1937197007144381,
+      "transactions": 5138,
+      "unique_senders": 5,
+      "active_days": 7
+    },
+    {
+      "address": "0x60ae616a2155ee3d9a68541ba4544862310933d4",
+      "gas_used": 1156719390,
+      "fees_burned_avax": 1.3241182009583012,
+      "transactions": 9865,
+      "unique_senders": 147,
+      "active_days": 7
+    },
+    {
+      "address": "0x3217653f849c7ed189d753528e9d874770a09ec5",
+      "gas_used": 1136411186,
+      "fees_burned_avax": 0.13159232681500996,
+      "transactions": 108,
+      "unique_senders": 1,
+      "active_days": 1
+    },
+    {
+      "address": "0x1a1ec25dc08e98e5e93f1104b5e5cdd298707d31",
+      "gas_used": 1071950126,
+      "fees_burned_avax": 1.4162517945277768,
+      "transactions": 2161,
+      "unique_senders": 1209,
+      "active_days": 7
+    },
+    {
+      "address": "0x366b81f8ae5726bf036d5e24a35517d9b178dafa",
+      "gas_used": 1065920784,
+      "fees_burned_avax": 0.28227755169533636,
+      "transactions": 6529,
+      "unique_senders": 10,
+      "active_days": 7
+    }
+  ]
+}

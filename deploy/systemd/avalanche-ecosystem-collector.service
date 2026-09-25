@@ -1,0 +1,19 @@
+[Unit]
+Description=Refresh Avalanche Ecosystem Observatory snapshot
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=__APP_DIR__
+Environment=NODE_ENV=production
+EnvironmentFile=-__APP_DIR__/.env
+ExecStart=/usr/bin/node __APP_DIR__/scripts/collect.mjs
+Nice=10
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=read-only
+ProtectSystem=strict
+ReadWritePaths=__APP_DIR__/public/data __APP_DIR__/state
+StandardOutput=journal
+StandardError=journal

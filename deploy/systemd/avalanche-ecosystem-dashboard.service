@@ -1,0 +1,25 @@
+[Unit]
+Description=Avalanche Ecosystem Observatory
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=__APP_DIR__
+Environment=NODE_ENV=production
+Environment=HOST=127.0.0.1
+Environment=PORT=8876
+EnvironmentFile=-__APP_DIR__/.env
+ExecStart=/usr/bin/node __APP_DIR__/server.mjs
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=read-only
+ProtectSystem=strict
+ReadOnlyPaths=__APP_DIR__
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=default.target

@@ -1,0 +1,159 @@
+{
+  "schema": "couchdicks.avalanche.sources.v1",
+  "sources": [
+    {
+      "id": "avalanche-public-rpc",
+      "name": "Avalanche Public C-Chain RPC",
+      "url": "https://api.avax.network/ext/bc/C/rpc",
+      "kind": "primary-onchain",
+      "cadence": "10-second cached live pulse plus hourly audited snapshot",
+      "confidence": "high",
+      "purpose": ["tip", "recent-block-window", "throughput-pulse", "block-time", "gas-utilization", "base-fee", "gas-price", "contract-state"]
+    },
+    {
+      "id": "avacache-parquet",
+      "name": "AvaCache daily Avalanche parquet",
+      "url": "https://parquet.avacache.com/manifest.json",
+      "kind": "indexed-onchain",
+      "cadence": "daily",
+      "confidence": "high",
+      "purpose": ["blocks", "transactions", "logs", "blockspace"],
+      "limitation": "Daily files are independently reconciled to the C-Chain tip and are not a substitute for traces."
+    },
+    {
+      "id": "euler-protocol-native",
+      "name": "Euler EVK Avalanche factory and UtilsLens",
+      "url": "https://github.com/euler-xyz/euler-interfaces/tree/d938bc264d6e1cee68a559798044d43ade8ac95e/addresses/43114",
+      "kind": "primary-onchain-and-documentation",
+      "cadence": "hourly fixed-block observation",
+      "confidence": "high",
+      "purpose": ["lending-market-discovery", "supply-apy", "borrow-apy", "supplied", "borrowed", "available-liquidity", "utilization"],
+      "limitation": "Factory provenance is not risk curation. Only active borrow-enabled vaults are displayed, balances are gross and non-additive, and missing USD prices remain null."
+    },
+    {
+      "id": "silo-protocol-native",
+      "name": "Silo Avalanche deployment registry, factory, and SiloLens",
+      "url": "https://github.com/silo-finance/silo-contracts-v3/blob/8e2c1b6283ab23c8640a0deaac08520daab3aae1/silo-core/deploy/silo/_siloDeployments.json",
+      "kind": "primary-onchain-and-documentation",
+      "cadence": "hourly fixed-block observation; pinned registry refreshed on releases",
+      "confidence": "high",
+      "purpose": ["lending-market-discovery", "supply-apr", "borrow-apr", "deposits", "debt", "liquidity", "utilization"],
+      "limitation": "The pinned registry includes legacy, expired, dust, and potentially impaired permissionless markets. APR is preserved as APR, utilization may exceed 100%, and missing USD prices remain null."
+    },
+    {
+      "id": "defillama-tvl",
+      "name": "DeFiLlama TVL API",
+      "url": "https://api.llama.fi",
+      "kind": "independent-aggregate",
+      "cadence": "60-second cached current observation plus hourly audited snapshot",
+      "confidence": "medium",
+      "purpose": ["chain-tvl", "protocol-tvl", "rwa-value"]
+    },
+    {
+      "id": "defillama-dimensions",
+      "name": "DeFiLlama Dimensions API",
+      "url": "https://api.llama.fi/overview/dexs/Avalanche",
+      "kind": "independent-aggregate",
+      "cadence": "60-second cached current observation plus hourly audited snapshot",
+      "confidence": "medium",
+      "purpose": ["dex-volume", "protocol-volume", "fee-reconciliation"],
+      "limitation": "Adapter coverage differs by protocol and may be revised after publication."
+    },
+    {
+      "id": "defillama-stablecoins",
+      "name": "DeFiLlama Stablecoins API",
+      "url": "https://stablecoins.llama.fi",
+      "kind": "independent-aggregate",
+      "cadence": "daily",
+      "confidence": "medium",
+      "purpose": ["stablecoin-supply", "stablecoin-composition"]
+    },
+    {
+      "id": "defillama-yields",
+      "name": "DeFiLlama Yields API",
+      "url": "https://yields.llama.fi/pools",
+      "kind": "independent-aggregate",
+      "cadence": "hourly",
+      "confidence": "medium",
+      "purpose": ["lending-markets", "supply-apy", "incentive-apy"],
+      "limitation": "Pool TVL is not equivalent to supplied or borrowed value unless the adapter exposes those fields."
+    },
+    {
+      "id": "defillama-coins",
+      "name": "DefiLlama Coins API",
+      "url": "https://coins.llama.fi",
+      "kind": "independent-market-data",
+      "cadence": "hourly current prices and daily historical observations",
+      "confidence": "medium",
+      "purpose": ["vault-asset-pricing", "liquidation-debt-pricing"],
+      "limitation": "Liquidations use the end-of-UTC-day token price rather than the exact block price. Missing prices stay unavailable and are never zero-filled."
+    },
+    {
+      "id": "coingecko",
+      "name": "CoinGecko market data API",
+      "url": "https://api.coingecko.com/api/v3/simple/price",
+      "kind": "independent-market-data",
+      "cadence": "5 minutes",
+      "confidence": "medium",
+      "purpose": ["avax-price", "avax-market-cap"],
+      "limitation": "The unauthenticated endpoint is rate limited; CoinPaprika is the automatic fallback."
+    },
+    {
+      "id": "coinpaprika",
+      "name": "CoinPaprika market data API",
+      "url": "https://api.coinpaprika.com/v1/tickers/avax-avalanche",
+      "kind": "independent-market-data",
+      "cadence": "60-second cached live pulse plus hourly audited snapshot",
+      "confidence": "medium",
+      "purpose": ["avax-price", "avax-market-cap"]
+    },
+    {
+      "id": "routescan",
+      "name": "Routescan Avalanche explorer API",
+      "url": "https://api.routescan.io/v2/network/mainnet/evm/43114/etherscan/api",
+      "kind": "indexed-onchain",
+      "cadence": "on demand",
+      "confidence": "medium",
+      "purpose": ["labels", "verified-source", "holder-samples", "explorer-links"]
+    },
+    {
+      "id": "rwa-xyz-public",
+      "name": "RWA.xyz public asset pages",
+      "url": "https://app.rwa.xyz/networks/avalanche",
+      "kind": "independent-rwa-registry",
+      "cadence": "daily",
+      "confidence": "medium",
+      "purpose": ["tokenized-asset-supply-verification", "tokenized-asset-value-verification"],
+      "limitation": "Only exact Avalanche C-Chain token rows are scored. Public-page structure can change, so parser failures become unavailable checks and never overwrite source-of-record values."
+    },
+    {
+      "id": "avalanche-metrics-api",
+      "name": "Avalanche Builder Hub Metrics API",
+      "url": "https://metrics.avax.network/v2/chains/43114/metrics",
+      "kind": "primary-indexed-onchain",
+      "cadence": "several times per hour",
+      "confidence": "high",
+      "purpose": ["transaction-count-verification", "gas-price-verification", "fee-burn-verification"],
+      "limitation": "Only metrics with definitions matching the local parquet derivation are scored. Active-address and contract-creation definitions are intentionally not compared."
+    },
+    {
+      "id": "avalanche-data-api",
+      "name": "Avalanche Builder Hub Data API",
+      "url": "https://data-api.avax.network/v1/avax/supply",
+      "kind": "primary-indexed-onchain",
+      "cadence": "60-second cached live observation",
+      "confidence": "high",
+      "purpose": ["avax-supply", "staking-rewards", "network-fee-burn", "staked-avax", "locked-avax"],
+      "limitation": "Supply fields are current cumulative observations, not a historical daily series. P-, C-, and X-Chain burn values are reported separately and summed only for the displayed Primary Network fee-burn total."
+    },
+    {
+      "id": "avalanche-docs",
+      "name": "Avalanche Builder Hub",
+      "url": "https://build.avax.network/docs/rpcs/other/guides/txn-fees",
+      "kind": "primary-documentation",
+      "cadence": "release-driven",
+      "confidence": "high",
+      "purpose": ["fee-mechanics", "methodology"]
+    }
+  ]
+}

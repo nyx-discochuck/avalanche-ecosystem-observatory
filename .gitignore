@@ -1,0 +1,12 @@
+node_modules/
+dist/
+.env
+.env.*
+!.env.example
+state/*.tmp
+state/*.json
+state/locks/
+reports/screenshots/
+/data/
+coverage/
+*.tgz
