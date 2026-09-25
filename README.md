@@ -20,7 +20,7 @@ Open `http://127.0.0.1:8876/avalanche/ecosystem/`. The committed files in `publi
 
 The repository contains validated public snapshots for blockspace, lending, and tokenized-asset views. `public/data/dashboard.json` is the server fallback when no runtime `state/dashboard.json` exists.
 
-Advanced lending and tokenized-asset collection requires a local parquet archive, configured with `AVACACHE_DIR`. Near-tip radar and other advanced observations can depend on a separately operated Avalanche Gateway, configured with `AVAX_RADAR_URL`. That Gateway is not included in this repository; when it is absent, the UI keeps serving committed snapshots and marks gateway-backed live features unavailable rather than inventing data.
+Advanced lending and tokenized-asset collection requires a local parquet archive, configured with `AVACACHE_DIR`. Near-tip radar and other advanced observations can depend on a separately operated Avalanche Gateway, configured with `AVAX_RADAR_URL`. That Gateway is not included in this repository; when it is absent, the UI keeps serving committed snapshots and marks gateway-backed live features unavailable rather than inventing data. See the [AVAX Radar indexing and Gateway architecture](docs/AVAX_RADAR_GATEWAY.md) for the source-grounded design and implementation handoff.
 
 To refresh data, review [data sources](docs/DATA_SOURCES.md), [methodology](docs/METHODOLOGY.md), and [indexing](docs/INDEXING.md), then run the relevant `collect:*` command. Collectors write ignored runtime state; publish a reviewed snapshot with `npm run snapshot:publish`.
 
