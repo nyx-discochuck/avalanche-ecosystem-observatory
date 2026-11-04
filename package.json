@@ -1,8 +1,7 @@
 {
-  "name": "avalanche-ecosystem-observatory",
+  "name": "avalanche-ecosystem-dashboard",
   "version": "1.0.0",
   "private": true,
-  "license": "MIT",
   "type": "module",
   "engines": {
     "node": ">=22"
@@ -17,8 +16,11 @@
     "snapshot:publish": "node scripts/publish-static.mjs",
     "serve": "node server.mjs",
     "healthcheck": "node scripts/healthcheck.mjs",
-    "check": "node scripts/validate-config.mjs && node --check server.mjs && node --check live-pulse.mjs && node --check radar-adapter.mjs && node --check scripts/dashboard-invariants.mjs && node --check scripts/collect.mjs && node --check scripts/bounded-child.mjs && node --check scripts/blockspace-history.mjs && node --check scripts/collect-blockspace.mjs && node --check scripts/collect-tokenized.mjs && node --check scripts/tokenized-dashboard.mjs && node --check scripts/collect-lending.mjs && node --check scripts/lending-materialized.mjs && node --check scripts/lending-metrics.mjs && node --check scripts/publish-static.mjs && node --check scripts/build-sites.mjs && node --check deploy/sites/worker.mjs && node --check scripts/lending-dashboard.mjs && node --check scripts/refresh-lending-dashboard.mjs",
-    "test": "npm run build --silent && node --test test/*.test.mjs",
+    "release:prepare": "node scripts/release-guard.mjs prepare",
+    "release:validate": "node scripts/release-guard.mjs validate",
+    "release:verify-public": "node scripts/release-guard.mjs verify-public",
+    "check": "node scripts/validate-config.mjs && node --check server.mjs && node --check live-pulse.mjs && node --check radar-adapter.mjs && node --check scripts/dashboard-invariants.mjs && node --check scripts/collect.mjs && node --check scripts/bounded-child.mjs && node --check scripts/collect-blockspace.mjs && node --check scripts/collect-tokenized.mjs && node --check scripts/tokenized-dashboard.mjs && node --check scripts/collect-lending.mjs && node --check scripts/lending-materialized.mjs && node --check scripts/lending-metrics.mjs && node --check scripts/publish-static.mjs && node --check scripts/release-guard.mjs && node --check scripts/build-sites.mjs && node --check deploy/sites/worker.mjs && node --check scripts/lending-dashboard.mjs && node --check scripts/refresh-lending-dashboard.mjs",
+    "test": "node --test test/*.test.mjs",
     "collect:lending": "node scripts/refresh-lending-dashboard.mjs"
   },
   "dependencies": {

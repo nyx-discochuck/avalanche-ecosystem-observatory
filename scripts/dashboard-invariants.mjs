@@ -35,7 +35,7 @@ export function validateDashboard(payload) {
 
   const tokenized = payload.tokenizedAssets;
   const valuedRows = (tokenized?.assets || []).filter((row) => finite(row.valueUsd));
-  const valuedContracts = valuedRows.length ? valuedRows.reduce((sum, row) => sum + row.valueUsd, 0) : null;
+  const valuedContracts = valuedRows.length === tokenized.assets.length ? valuedRows.reduce((sum, row) => sum + row.valueUsd, 0) : null;
   const rwaAdapters = (tokenized?.protocols || []).reduce((sum, row) => sum + row.tvl, 0);
   invariant(valuedContracts == null
     ? tokenized.kpis.verifiedContractValueUsd == null
@@ -43,6 +43,16 @@ export function validateDashboard(payload) {
   invariant(close(tokenized.kpis.rwaAdapterTvlUsd, rwaAdapters), 'RWA adapter TVL does not reconcile');
   invariant(tokenized.kpis.trackedValueUsd === tokenized.kpis.verifiedContractValueUsd, 'tracked tokenized value uses the wrong scope');
   invariant(payload.overview.kpis.tokenizedAssetValueUsd === tokenized.kpis.verifiedContractValueUsd, 'overview tokenized value uses the wrong scope');
+  const venueLandscape = tokenized.venueLandscape;
+  invariant(venueLandscape?.schema === 'couchdicks.avalanche.tokenized-stock-venues.v1', 'tokenized-stock venue landscape is missing');
+  invariant(venueLandscape.ranking?.metric === 'Seven-day net deposits' && venueLandscape.ranking.window === 'rolling-7d', 'venue ranking metric is mislabeled');
+  invariant(['available', 'stale', 'unavailable'].includes(venueLandscape.ranking.availability), 'venue ranking availability is invalid');
+  const pharaohVenue = venueLandscape.venues?.find((row) => row.id === 'pharaoh-tokenized-stocks');
+  invariant(pharaohVenue?.lifecycle === 'announced-not-live' && pharaohVenue.availability === 'not-live', 'Pharaoh venue must remain announced and not live');
+  invariant(pharaohVenue.netDeposits7dUsd == null && pharaohVenue.volumeUsd == null && pharaohVenue.launchDate == null, 'Pharaoh has unsupported market metrics or launch timing');
+  invariant(Array.isArray(pharaohVenue.tokenContracts) && pharaohVenue.tokenContracts.length === 0, 'Pharaoh has unsupported token contracts');
+  invariant(pharaohVenue.issuer == null && pharaohVenue.custody == null && pharaohVenue.regulatoryDetails == null, 'Pharaoh has unsupported operating-party details');
+  invariant(!(tokenized.assets || []).some((row) => /pharaoh/i.test(`${row.id} ${row.name} ${row.symbol}`)), 'Pharaoh venue contaminated the canonical asset registry');
 
   for (const dex of [payload.overview?.dex, payload.spot]) {
     invariant(['current-utc-day-partial', 'latest-available-utc-day'].includes(dex?.architectureCoverage?.window), 'DEX architecture window is invalid');

@@ -2,11 +2,10 @@ import { readdir, stat } from 'node:fs/promises';
 import path from 'node:path';
 import { DuckDBInstance, DuckDBScalarFunction, DOUBLE, VARCHAR } from '@duckdb/node-api';
 import { ROOT, readJson, writeJsonAtomic } from './lib.mjs';
-import { blockspaceCoverage, extractBlockspaceDaily, mergeBlockspaceDaily } from './blockspace-history.mjs';
 
-const archiveDir = path.resolve(process.env.AVACACHE_DIR || path.join(ROOT, 'data', 'avax-data-parquet'));
-const outputFile = process.env.BLOCKSPACE_OUTPUT_FILE || path.join(ROOT, 'state', 'blockspace.json');
-const checkpointFile = process.env.BLOCKSPACE_CHECKPOINT_FILE || path.join(ROOT, 'state', 'blockspace-checkpoint.json');
+const archiveDir = process.env.AVACACHE_DIR || '/home/openclaw/.openclaw/workspace/archive/avax-data-parquet';
+const outputFile = path.join(ROOT, 'state', 'blockspace.json');
+const checkpointFile = path.join(ROOT, 'state', 'blockspace-checkpoint.json');
 const lookbackDays = Math.max(7, Number(process.env.COLLECT_LOOKBACK_DAYS || 30));
 
 function hexToDouble(value) {
@@ -48,18 +47,8 @@ const sourceMetadata = await Promise.all([...blockFiles, ...txFiles].map(async (
   return `${path.basename(file)}:${info.size}:${Math.trunc(info.mtimeMs)}`;
 }));
 const fingerprint = sourceMetadata.join(',');
-const historySeedFiles = [
-  outputFile,
-  path.join(ROOT, 'state', 'dashboard.json'),
-  path.join(ROOT, 'public', 'data', 'dashboard.json'),
-  ...(process.env.BLOCKSPACE_HISTORY_SEED || '').split(',').map((value) => value.trim()).filter(Boolean),
-];
-const historyCandidates = await Promise.all(historySeedFiles.map((file) => readJson(file, null)));
-const previousDaily = mergeBlockspaceDaily(historyCandidates.flatMap(extractBlockspaceDaily), []);
-const existingOutput = await readJson(outputFile, null);
-const existingDays = extractBlockspaceDaily(existingOutput).length;
-if (previous.fingerprint === fingerprint && previous.completedAt && existingOutput && existingDays >= previousDaily.length) {
-  console.log(`blockspace current through ${completeDates.at(-1)}; ${existingDays} preserved days already published (${completeDates.length} retained-source days)`);
+if (previous.fingerprint === fingerprint && previous.completedAt && await readJson(outputFile)) {
+  console.log(`blockspace current through ${completeDates.at(-1)}; ${completeDates.length} days already derived`);
   process.exit(0);
 }
 
@@ -139,16 +128,15 @@ const daily = txDaily.map((row) => {
   };
 });
 
-const mergedDaily = mergeBlockspaceDaily(previousDaily, daily);
-const coverage = blockspaceCoverage(mergedDaily, { rederivedDates: completeDates });
 const payload = {
   schema: 'couchdicks.avalanche.blockspace.v1',
   generatedAt: new Date().toISOString(),
   source: 'local-avacache-parquet',
   coverage: {
-    ...coverage,
-    sourceWindow: { start: completeDates[0], end: completeDates.at(-1), days: completeDates.length },
-    retentionPolicy: 'Previously derived complete UTC days are retained; currently available parquet days replace matching dates.',
+    start: completeDates[0],
+    end: completeDates.at(-1),
+    days: completeDates.length,
+    completeDaysOnly: true,
   },
   definitions: {
     activeAddresses: 'Distinct transaction senders per UTC day.',
@@ -156,11 +144,16 @@ const payload = {
     fees: 'Receipt gas used multiplied by effective gas price. Avalanche C-Chain burns transaction fees.',
     throughput: 'Daily transaction or gas total divided by 86,400 seconds; not peak throughput.',
   },
-  daily: mergedDaily,
+  daily,
   topContracts,
-  topContractsCoverage: { start: completeDates[0], end: completeDates.at(-1), days: completeDates.length, scope: 'currently retained parquet source window only' },
 };
 
+const retained = await readJson(outputFile, {});
+const retainedByDate = new Map((retained.daily || []).map(row => [row.date, row]));
+for (const row of payload.daily) retainedByDate.set(row.date, row);
+payload.daily = [...retainedByDate.values()].sort((a,b)=>a.date.localeCompare(b.date)).slice(-lookbackDays);
+payload.topContractsCoverage = {...payload.coverage};
+payload.coverage = {...payload.coverage,start:payload.daily[0].date,end:payload.daily.at(-1).date,days:payload.daily.length};
 await writeJsonAtomic(outputFile, payload);
 await writeJsonAtomic(checkpointFile, {
   fingerprint,
@@ -168,4 +161,9 @@ await writeJsonAtomic(checkpointFile, {
   coverage: payload.coverage,
   sourceFiles: sourceMetadata,
 });
-console.log(`derived ${daily.length} source-window rows, published ${mergedDaily.length} preserved daily rows, and ${topContracts.length} retained-window contracts through ${payload.coverage.end}`);
+console.log(`derived ${daily.length} daily rows and ${topContracts.length} contracts through ${payload.coverage.end}`);
+
+connection.closeSync();
+instance.closeSync();
+await new Promise(resolve => process.stdout.write("",resolve));
+process.exit(0);

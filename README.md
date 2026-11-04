@@ -1,53 +1,50 @@
 # Avalanche Ecosystem Observatory
 
-An open-source Avalanche C-Chain analytics dashboard with auditable metric definitions, source registries, collectors, and source-backed public snapshots.
+Avalanche C-Chain analytics at `/avalanche/ecosystem/`, built as a separate project from every aggregator-attribution dashboard. The application follows the information architecture and dense analytical workflow of the ArbData ecosystem reference while using an original Avalanche/Couchdicks presentation and Avalanche-native accounting.
 
-## Quick start
-
-Requires Node.js 22 or newer.
+## Run
 
 ```bash
 npm ci
-npm run check
-npm test
+npm run collect
+npm run snapshot:publish
 npm run build
 npm run serve
 ```
 
-Open `http://127.0.0.1:8876/avalanche/ecosystem/`. The committed files in `public/data/` let the dashboard and API run without private infrastructure or a fresh collection. Copy `.env.example` to `.env` only when you need to override defaults.
+The production server listens on `127.0.0.1:8876` by default. The frontend and JSON API are available with and without the production prefix:
 
-## Data and optional Gateway
+- `/avalanche/ecosystem/`
+- `/avalanche/ecosystem/api/dashboard`
+- `/avalanche/ecosystem/api/live`
+- `/avalanche/ecosystem/api/radar`
+- `/avalanche/ecosystem/api/catalog`
+- `/avalanche/ecosystem/api/health`
 
-The repository contains validated public snapshots for blockspace, lending, and tokenized-asset views. `public/data/dashboard.json` is the server fallback when no runtime `state/dashboard.json` exists.
+## Project Map
 
-Advanced lending and tokenized-asset collection requires a local parquet archive, configured with `AVACACHE_DIR`. Near-tip radar and other advanced observations can depend on a separately operated Avalanche Gateway, configured with `AVAX_RADAR_URL`. That Gateway is not included in this repository; when it is absent, the UI keeps serving committed snapshots and marks gateway-backed live features unavailable rather than inventing data. See the [AVAX Radar indexing and Gateway architecture](docs/AVAX_RADAR_GATEWAY.md) for the source-grounded design and implementation handoff.
+- `src/`: seven dashboard sections, a live network pulse, and shared interactive components
+- Live pulse: a cached 12-block C-Chain window plus current AVAX, TVL, and partial UTC-day DEX observations; the browser revalidates automatically
+- Verification Desk: scope-aware checks against RWA.xyz, Avalanche Metrics API, DeFiLlama companion endpoints, and independent AVAX market data
+- `scripts/`: resumable collectors, validation, and health checks
+- Lending evidence: fixed-block Euler UtilsLens APY and SiloLens APR/accounting from official factory/registry inventories, plus 30 complete days of Aave, BENQI, Euler, and factory-validated Silo liquidation events
+- `config/protocol-registry.json`: machine-readable protocol and contract registry
+- `config/lending-onchain.json`: official lending factories, pools, spokes, and event scope
+- `config/metric-catalog.json`: auditable definitions and calculation rules
+- `config/sources.json`: source inventory and confidence
+- `public/data/`: tracked, validated release snapshots for static fallback
+- `state/`: ignored runtime snapshots, checkpoints, and private collector state
+- `deploy/systemd/`: isolated runtime and refresh units
+- `docs/`: architecture, data, methodology, validation, operations, and limitations
 
-To refresh data, review [data sources](docs/DATA_SOURCES.md), [methodology](docs/METHODOLOGY.md), and [indexing](docs/INDEXING.md), then run the relevant `collect:*` command. Collectors write ignored runtime state; publish a reviewed snapshot with `npm run snapshot:publish`.
+## Documentation
 
-## Project map
+- [Architecture](docs/ARCHITECTURE.md)
+- [Data sources and registry](docs/DATA_SOURCES.md)
+- [Methodology](docs/METHODOLOGY.md)
+- [Indexing](docs/INDEXING.md)
+- [Validation and reconciliation](docs/VALIDATION.md)
+- [Operations and recovery](docs/OPERATIONS.md)
+- [Known limitations](docs/KNOWN_LIMITATIONS.md)
 
-- `src/`: React dashboard and analytical views
-- `server.mjs`: static server and JSON APIs
-- `scripts/`: collectors, validators, and snapshot tooling
-- `config/`: protocol, contract, source, and metric registries
-- `public/data/`: committed, validated static snapshots
-- `test/`: Node test suite
-- `docs/`: architecture, methodology, validation, and operations
-- `deploy/`: sanitized deployment examples only
-
-The frontend and API support both root paths and the production-compatible `/avalanche/ecosystem/` prefix. No RPC credentials, private keys, administrative endpoints, or production deployment state are required or committed.
-
-## Development
-
-```bash
-npm run dev       # Vite development server
-npm run check     # configuration and syntax validation
-npm test          # complete test suite
-npm run build     # production bundle
-```
-
-See [CONTRIBUTING.md](CONTRIBUTING.md), [SECURITY.md](SECURITY.md), and [the architecture guide](docs/ARCHITECTURE.md).
-
-## License
-
-[MIT](LICENSE). Snapshot data retains the provenance and source terms documented in the project; verify upstream terms before redistributing derived datasets.
+No RPC credentials, API keys, private keys, or administrative endpoints are bundled into the client. Optional server-side values are documented in `.env.example`.

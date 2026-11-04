@@ -5,19 +5,19 @@ Wants=network-online.target
 
 [Service]
 Type=simple
-WorkingDirectory=__APP_DIR__
+WorkingDirectory=/home/openclaw/avalanche-ecosystem-dashboard
 Environment=NODE_ENV=production
 Environment=HOST=127.0.0.1
 Environment=PORT=8876
-EnvironmentFile=-__APP_DIR__/.env
-ExecStart=/usr/bin/node __APP_DIR__/server.mjs
+EnvironmentFile=-/home/openclaw/avalanche-ecosystem-dashboard/.env
+ExecStart=/usr/bin/node /home/openclaw/avalanche-ecosystem-dashboard/server.mjs
 Restart=on-failure
 RestartSec=5
 NoNewPrivileges=true
 PrivateTmp=true
 ProtectHome=read-only
 ProtectSystem=strict
-ReadOnlyPaths=__APP_DIR__
+ReadOnlyPaths=/home/openclaw/avalanche-ecosystem-dashboard
 StandardOutput=journal
 StandardError=journal
 

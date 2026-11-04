@@ -943,47 +943,123 @@ function SpotPage({ data, range, custom, onInfo }) {
   );
 }
 
+function tokenizedObservation(row, field) {
+  const status = row.fieldStatus?.[field];
+  // Field observations are authoritative, including a missing retained timestamp.
+  // Never substitute the latest Gateway block for an older retained supply read.
+  const observedAt = status ? status.observedAt : (field === 'totalSupply'
+    ? row.supplyObservedAt
+    : row.priceObservedAt || row.valuationObservedAt || row.valuationFeed?.updatedAt);
+  const retained = status?.retainedLastGood === true;
+  const sourceAvailability = status?.availability || 'unavailable';
+  const availability = retained && sourceAvailability === 'available' ? 'stale' : sourceAvailability;
+  const label = retained
+    ? (availability === 'unavailable' ? 'Unavailable · retained observation' : 'Retained · stale')
+    : ({ available: 'Current', partial: 'Partial', stale: 'Stale', unavailable: 'Unavailable' }[availability] || 'Status unavailable');
+  return { observedAt, retained, availability, label };
+}
+
+function TokenizedFieldStatus({ row, field }) {
+  const status = tokenizedObservation(row, field);
+  return <small className={`tokenized-field-status ${status.availability}`}>{status.label}</small>;
+}
+
+function tokenizedValuationSource(row) {
+  const address = row.feedContract || row.valuationContract || row.valuationFeed?.address;
+  const url = /^https:\/\//i.test(row.valuationSource?.url || '') ? row.valuationSource.url
+    : /^0x[\da-f]{40}$/i.test(address || '') ? `https://snowscan.xyz/address/${address}` : null;
+  return { url, label: row.valuationSource?.label || row.valuationFeed?.label || 'Valuation feed' };
+}
+
+function TokenizedValuationEvidence({ row }) {
+  const source = tokenizedValuationSource(row);
+  const price = tokenizedObservation(row, 'valuationUsd');
+  const supply = tokenizedObservation(row, 'totalSupply');
+  const basis = { 'fundamental-nav': 'Fundamental NAV · USD/share', 'end-of-day-equity-price': 'End-of-day equity price · USD/share' }[row.valuationBasis] || row.valuationBasis;
+  return <span className="tokenized-evidence address-cell">
+    <strong>{basis || 'Valuation basis unavailable'}</strong>
+    {source.url ? <a href={source.url} target="_blank" rel="noreferrer">{source.label} <ExternalLink size={13} /></a> : <span>Valuation source unavailable</span>}
+    <span>Price observed: {price.observedAt ? <time dateTime={price.observedAt}>{dateTimeLabel(price.observedAt)}</time> : 'Unavailable'} · {price.label}</span>
+    <span>Supply observed: {supply.observedAt ? <time dateTime={supply.observedAt}>{dateTimeLabel(supply.observedAt)}</time> : 'Unavailable'} · {supply.label}</span>
+  </span>;
+}
+
 function TokenizedPage({ data, range, custom, onInfo }) {
   const tokenized = data.tokenizedAssets;
+  const venueLandscape = tokenized.venueLandscape;
   const [assetId, setAssetId] = useState(tokenized.assets[0]?.id || '');
   const asset = tokenized.assets.find((row) => row.id === assetId) || tokenized.assets[0];
+  const currentValuedAssets = tokenized.assets.filter((row) => finite(row.valueUsd) && tokenizedObservation(row, 'valueUsd').availability === 'available').length;
+  const retainedValueAssets = tokenized.assets.filter((row) => finite(row.valueUsd) && row.fieldStatus?.valueUsd?.retainedLastGood).length;
   const rwaSeries = Object.keys(latest(tokenized.rwaAdapterValueHistory)).filter((key) => key !== 'date' && key !== 'total').map((key) => ({ key, name: key.replaceAll('-', ' ') }));
   return (
     <>
       <PageTitle title="Tokenized Assets" description="Verified native Avalanche RWA issuances, separated from ordinary stablecoins and bridged representations." data={data} />
       <div className="kpi-grid four">
         <Kpi label="Verified Assets" value={tokenized.kpis.verifiedTokenContracts} unit="contracts" metric="tokenized_asset_count" onInfo={onInfo} />
-        <Kpi label={tokenized.kpis.aggregateComplete ? 'Verified Contract Value' : 'Partial Contract Value'} value={tokenized.kpis.verifiedContractValueUsd} note={`${tokenized.kpis.valueCoverage || `${tokenized.kpis.valuedAssets}/${tokenized.kpis.trackedAssets}`} eligible · ${tokenized.kpis.aggregateStatus || tokenized.kpis.valueAvailability || 'partial'}${tokenized.kpis.excludedAssetIds?.length ? ` · excludes ${tokenized.kpis.excludedAssetIds.join(', ').toUpperCase()}` : ''}`} metric="tokenized_asset_value" onInfo={onInfo} />
+        <Kpi label="Verified Contract Value" value={tokenized.kpis.verifiedContractValueUsd} note={`${tokenized.kpis.valueCoverage || `${tokenized.kpis.valuedAssets}/${tokenized.kpis.trackedAssets}`} valued · ${tokenized.kpis.valueAvailability || 'partial'}`} metric="tokenized_asset_value" onInfo={onInfo} />
         <Kpi label="Broader RWA Adapter TVL" value={tokenized.kpis.rwaAdapterTvlUsd} note="Separate adapter scope; not additive" metric="rwa_adapter_tvl" onInfo={onInfo} />
         <Kpi label="Summed Contract Addresses" value={tokenized.kpis.verifiedHolders} unit="address" note={`${tokenized.kpis.holderCoverage || 'legacy snapshot'} · not unique investors`} metric="tokenized_asset_holders" onInfo={onInfo} />
       </div>
       <CoverageNote title="Coverage and scope" detail={`${tokenized.scope?.completeness || 'Curated verified-contract coverage.'} ${tokenized.kpis.valuedAssets} of ${tokenized.kpis.trackedAssets} assets valued from exact-contract supply × validated RedStone valuation. Stablecoins, bridged wrappers, DeFiLlama adapter TVL, and RWA.xyz comparator estimates remain separate and are not additive.`} />
+      <CoverageNote title="Valuation freshness" detail={`${currentValuedAssets} current asset valuations; ${retainedValueAssets} retained last-good observations. ${tokenized.kpis.valueAvailability === 'available' ? 'The eligible exact-contract aggregate is available.' : `Aggregate coverage is ${tokenized.kpis.valueAvailability || 'unavailable'}.`} Source status and independent price/supply observation times are shown per asset; publishing a snapshot does not refresh those observations.`} />
       <CoverageNote title="Canonical source and activity coverage" detail={tokenized.activityStatus ? `Gateway block ${tokenized.canonicalSnapshot?.block?.number?.toLocaleString?.() || 'unavailable'} observed ${dateTimeLabel(tokenized.canonicalSnapshot?.block?.timestamp)}. Activity ${tokenized.activityStatus.availability}: fully covered archive days ${tokenized.activityStatus.coverage?.start || 'unknown'}–${tokenized.activityStatus.coverage?.end || 'unknown'}; explicit zeros only inside that interval. ${tokenized.activityStatus.limitation}` : 'Canonical activity coverage unavailable.'} />
       <div className="asset-toolbar">
         <label><span>Asset</span><select value={asset?.id || ''} onChange={(event) => setAssetId(event.target.value)}>{tokenized.assets.map((row) => <option key={row.id} value={row.id}>{row.symbol} · {row.name}</option>)}</select></label>
-        {asset && <div><span>Supply</span><strong>{compact.format(asset.totalSupply)} {asset.symbol}</strong></div>}
-        {asset && <div><span>Tokenized value</span><strong>{formatValue(asset.valueUsd)}</strong></div>}
-        {asset && <div><span>Valuation</span><strong>{finite(asset.valuationUsd) ? `${formatValue(asset.valuationUsd)} / share` : 'Unavailable'}</strong></div>}
+        {asset && <div><span>Supply</span><strong>{finite(asset.totalSupply) ? `${compact.format(asset.totalSupply)} ${asset.symbol}` : 'Unavailable'}</strong><TokenizedFieldStatus row={asset} field="totalSupply" /></div>}
+        {asset && <div><span>Tokenized value</span><strong>{formatValue(asset.valueUsd)}</strong><TokenizedFieldStatus row={asset} field="valueUsd" /></div>}
+        {asset && <div><span>Valuation</span><strong>{finite(asset.valuationUsd) ? `${formatValue(asset.valuationUsd)} / share` : 'Unavailable'}</strong><TokenizedFieldStatus row={asset} field="valuationUsd" /></div>}
         {asset && <a href={asset.explorer} target="_blank" rel="noreferrer">Contract <ExternalLink size={14} /></a>}
         {asset?.issuerUrl && <a href={asset.issuerUrl} target="_blank" rel="noreferrer">Issuer <ExternalLink size={14} /></a>}
       </div>
+      {asset && <section className="tokenized-selected-evidence" aria-label={`${asset.symbol} valuation and supply evidence`}><TokenizedValuationEvidence row={asset} />{asset.productUrl && <a href={asset.productUrl} target="_blank" rel="noreferrer">Product evidence <ExternalLink size={13} /></a>}</section>}
       <DataTable title="Verified Tokenized Assets" rows={tokenized.assets} metric="tokenized_asset_value" onInfo={onInfo} columns={[
         { key: 'name', label: 'Asset', render: (value, row) => <span className="address-cell"><strong>{value}</strong><span>{row.category}</span></span> },
         { key: 'symbol', label: 'Symbol' },
-        { key: 'totalSupply', label: 'Supply', render: (value) => finite(value) ? compact.format(value) : 'Unavailable' },
-        { key: 'valueUsd', label: 'Tokenized Value', render: (value) => formatValue(value) },
-        { key: 'holders', label: 'Contract addresses', render: (value) => finite(value) ? integer.format(value) : 'Unavailable' },
+        { key: 'totalSupply', label: 'Supply', render: (value, row) => <span className="tokenized-evidence address-cell"><strong>{finite(value) ? compact.format(value) : 'Unavailable'}</strong><TokenizedFieldStatus row={row} field="totalSupply" /></span> },
+        { key: 'valueUsd', label: 'Tokenized Value', render: (value, row) => <span className="tokenized-evidence address-cell"><strong>{formatValue(value)}</strong><TokenizedFieldStatus row={row} field="valueUsd" /></span> },
+        { key: 'holders', label: 'Contract addresses', render: (value, row) => <span className="tokenized-evidence address-cell"><strong>{finite(value) ? integer.format(value) : 'Unavailable'}</strong><TokenizedFieldStatus row={row} field="holders" /></span> },
         { key: 'issuer', label: 'Issuer', render: (value, row) => row.issuerUrl ? <a href={row.issuerUrl} target="_blank" rel="noreferrer">{value || 'Issuer source'} <ExternalLink size={13} /></a> : 'Unavailable' },
-        { key: 'valuationBasis', label: 'Valuation basis', render: (value, row) => <span className="address-cell"><strong>{value || 'Unavailable'}</strong><span>{row.valuationFeed?.updatedAt ? `Feed ${dateTimeLabel(row.valuationFeed.updatedAt)}` : 'Feed timestamp unavailable'} · token {dateTimeLabel(row.gatewayBlock?.timestamp)}</span></span> },
+        { key: 'valuationBasis', label: 'Valuation basis', render: (_value, row) => <TokenizedValuationEvidence row={row} /> },
         { key: 'confidence', label: 'Confidence', render: (value) => <span className={`confidence ${value}`}>{value}</span> },
         { key: 'address', label: 'Contract', render: (value) => <a href={`https://snowscan.xyz/address/${value}`} target="_blank" rel="noreferrer">{value.slice(0, 8)}… <ExternalLink size={13} /></a> },
       ]} />
-      <ChartPanel title="Verified Contract Value Over Time" data={tokenized.valueHistory} series={[{ key: 'total', name: 'Verified contract value' }]} range={range} custom={custom} metric="tokenized_asset_value" onInfo={onInfo} empty={!tokenized.valueHistory?.length ? { title: 'Valuation history unavailable', detail: 'No defensible observation-date valuation series is published for the selected period.' } : null} />
+      {tokenized.valueHistory?.length >= 2
+        ? <ChartPanel title="Verified Contract Value Over Time" data={tokenized.valueHistory} series={[{ key: 'total', name: 'Verified contract value' }]} range={range} custom={custom} metric="tokenized_asset_value" onInfo={onInfo} />
+        : <CoverageNote title="Valuation history" detail={`${tokenized.valueHistory?.length ? `Source-backed observations start ${tokenized.valueHistory[0].date}.` : 'Source-backed observations are not yet recorded.'} No historical values are inferred. A trend chart will appear after a second dated observation.`} />}
       <div className="two-column">
-        <ChartPanel title={`${asset?.symbol || 'Asset'} Daily Mint and Burn`} subtitle={tokenized.activityStatus?.coverage ? `Indexed token units · covered ${tokenized.activityStatus.coverage.start}–${tokenized.activityStatus.coverage.end}` : 'Indexed token units · coverage unavailable'} data={asset?.history || []} series={[{ key: 'minted', name: 'Minted', color: '#34d399' }, { key: 'burned', name: 'Burned', color: '#ef3b42' }]} range={range} custom={custom} type="bar" unit="" metric="tokenized_mint_burn" onInfo={onInfo} empty={!asset?.history?.length ? { title: 'No retained mint or burn events', detail: tokenized.activityStatus?.coverage ? `No events were observed in the fully indexed ${tokenized.activityStatus.coverage.start}–${tokenized.activityStatus.coverage.end} window.` : 'The indexed activity window is unavailable.' } : null} />
+        <ChartPanel title={`${asset?.symbol || 'Asset'} Daily Mint and Burn`} subtitle={tokenized.activityStatus?.coverage ? `Indexed token units · covered ${tokenized.activityStatus.coverage.start}–${tokenized.activityStatus.coverage.end} · ${tokenized.activityStatus.availability}` : 'Indexed token units · coverage unavailable'} data={asset?.history || []} series={[{ key: 'minted', name: 'Minted', color: '#34d399' }, { key: 'burned', name: 'Burned', color: '#ef3b42' }]} range={range} custom={custom} type="bar" unit="" metric="tokenized_mint_burn" onInfo={onInfo} empty={!asset?.history?.length ? { title: 'Mint and burn observations unavailable', detail: 'No covered daily rows were published for this asset. Missing rows do not establish zero activity.' } : null} />
         <ChartPanel title={`${asset?.symbol || 'Asset'} Holder History`} subtitle="Contract holder-record count; not deduplicated people or investors." data={asset?.holderHistory || []} series={[{ key: 'holders', name: 'Contract holder records' }]} range={range} custom={custom} type="line" unit="address" metric="tokenized_asset_holders" onInfo={onInfo} empty={!asset?.holderHistory?.length ? { title: 'Holder history unavailable', detail: 'No dated contract holder-record series is available for this asset.' } : null} />
       </div>
       <CoverageNote title="Asset-level DEX volume" detail={tokenized.dexCoverage} />
+      {venueLandscape && <section className="panel venue-landscape" aria-labelledby="tokenized-venue-landscape-title">
+        <div className="panel-heading">
+          <div>
+            <h2 id="tokenized-venue-landscape-title">Tokenized-stock venue landscape</h2>
+            <p>{venueLandscape.scope}</p>
+          </div>
+          <span className={`venue-state ${venueLandscape.ranking.availability}`}>{venueLandscape.ranking.availability}</span>
+        </div>
+        <div className="venue-ranking-note">
+          <div><span>Live market lens</span><strong>{venueLandscape.ranking.provider} · {venueLandscape.ranking.metric}</strong><small>Rolling seven days · snapshot values {venueLandscape.ranking.availability}</small></div>
+          <a href={venueLandscape.ranking.sourceUrl} target="_blank" rel="noreferrer">Open live ranking <ExternalLink size={13} /></a>
+        </div>
+        <p className="venue-limitation">{venueLandscape.ranking.limitation}</p>
+        <div className="venue-cards">
+          {venueLandscape.venues.map((venue) => <article className="venue-card" key={venue.id}>
+            <div className="venue-card-title"><div><span>{venue.chain} · {venue.venueType}</span><h3>{venue.name}</h3></div><span className={`venue-state ${venue.availability}`}>Announced · not live</span></div>
+            <p>{venue.plan}</p>
+            <dl>
+              <div><dt>7d net deposits</dt><dd>Unavailable</dd></div>
+              <div><dt>Volume</dt><dd>Unavailable</dd></div>
+              <div><dt>Launch date</dt><dd>Unavailable</dd></div>
+              <div><dt>Contracts</dt><dd>Unavailable</dd></div>
+            </dl>
+            <p className="venue-limitation">{venue.limitation}</p>
+            <a href={venue.sourceUrl} target="_blank" rel="noreferrer">{venue.sourceLabel} · <time dateTime={venue.evidenceObservedAt}>{dateTimeLabel(venue.evidenceObservedAt)}</time> <ExternalLink size={13} /></a>
+          </article>)}
+        </div>
+      </section>}
       <CoverageNote title="Broader protocol adapter TVL · secondary scope" detail="DeFiLlama protocol adapter TVL can include structures beyond the verified issuance ledger. It is not additive to exact-contract value." />
       <ChartPanel title="Broader RWA Adapter TVL Over Time" subtitle="Secondary, non-additive adapter scope; top contributors are shown first." data={tokenized.rwaAdapterValueHistory} series={rwaSeries} range={range} custom={custom} type="line" metric="rwa_adapter_tvl" onInfo={onInfo} />
       <DataTable title="Broader RWA Protocol Adapters" rows={tokenized.protocols} defaultSort={{ key: 'tvl', direction: 'desc' }} metric="rwa_adapter_tvl" onInfo={onInfo} columns={[

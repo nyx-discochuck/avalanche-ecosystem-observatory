@@ -1,3 +1,5 @@
+import { publishSnapshotBundle } from './snapshot-bundle.mjs';
+import { updateDashboardTokenized } from './tokenized-publisher.mjs';
 import { runBoundedChildrenSettled } from './bounded-child.mjs';
 import { closeSync, mkdirSync, openSync, statSync, unlinkSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
@@ -27,7 +29,7 @@ import {
   partitionLendingMarkets,
   validateLendingMarketRow,
 } from './lending-metrics.mjs';
-import { activityFreshness, composeTokenizedEvidence, fieldFromSourceEnvelope, independentObservedField, summarizeTokenized } from './tokenized-dashboard.mjs';
+import { activityFreshness, composeTokenizedEvidence, fieldFromSourceEnvelope, independentObservedField, summarizeTokenized, tokenizedStockVenueLandscape } from './tokenized-dashboard.mjs';
 
 const RPC_URL = process.env.AVALANCHE_RPC_URL || 'https://api.avax.network/ext/bc/C/rpc';
 const TOKENIZED_GATEWAY_URL = process.env.TOKENIZED_GATEWAY_URL || 'http://127.0.0.1:43140/api/materialized/avalanche/tokenized-assets';
@@ -484,14 +486,9 @@ const tokenRows = (await Promise.all(tokenProtocols.map(async (protocol) => {
 // An empty valuation set is unavailable, not a measured zero. Preserve that
 // distinction through the overview and tokenized-asset headline cards.
 const tokenValuesUsd = tokenRows.map((token) => token.valueUsd).filter(Number.isFinite);
-const verifiedContractValueUsd = tokenValuesUsd.length ? sum(tokenValuesUsd) : null;
+const verifiedContractValueUsd = tokenValuesUsd.length === tokenRows.length ? sum(tokenValuesUsd) : null;
 const rwaAdapterTvlUsd = sum(rwaProtocols.map((protocol) => protocol.tvl));
 const tokenizedKpis = summarizeTokenized(tokenRows, rwaProtocols.length ? rwaAdapterTvlUsd : null);
-tokenizedKpis.aggregateStatus = canonicalTokenized?.aggregateStatus || (tokenizedKpis.valuedAssets ? 'partial' : 'unavailable');
-tokenizedKpis.aggregateLabel = canonicalTokenized?.aggregateLabel || (tokenizedKpis.valuedAssets ? 'Partial eligible contract value' : 'Contract value unavailable');
-tokenizedKpis.aggregateComplete = canonicalTokenized?.aggregateEligibility?.complete === true;
-tokenizedKpis.eligibleAssetIds = canonicalTokenized?.aggregateEligibility?.eligibleAssetIds || [];
-tokenizedKpis.excludedAssetIds = canonicalTokenized?.aggregateEligibility?.excludedAssetIds || tokenRows.map((row) => row.id);
 const rwaAssetRows = rwaPageResults.map(({ asset, result }) => {
   if (!result.ok) {
     return {
@@ -525,7 +522,7 @@ const rwaAssetRows = rwaPageResults.map(({ asset, result }) => {
   }
 });
 const tokenizedEvidence = composeTokenizedEvidence({ canonicalSnapshot: canonicalTokenized, comparators: rwaAssetRows });
-const verifiedValueHistory = tokenizedEvidence.valueHistory;
+const verifiedValueHistory = tokenizedEvidence.valueHistory.length ? tokenizedEvidence.valueHistory : previousDashboard.tokenizedAssets?.valueHistorySource === 'canonical-observations' ? previousDashboard.tokenizedAssets.valueHistory : [];
 const previousHolderHistory = await readJson(HOLDER_HISTORY, []);
 const holderPoint = {
   timestamp: new Date().toISOString(),
@@ -534,14 +531,14 @@ const holderPoint = {
   fieldStatus: Object.fromEntries(tokenRows.map((token) => [token.id, { ...token.fieldStatus.holders, source: 'routescan-exact-contract-holder-count' }])),
 };
 const holderHistory = [...previousHolderHistory.filter((point) => point.date !== holderPoint.date), holderPoint].slice(-730);
-await writeJsonAtomic(HOLDER_HISTORY, holderHistory);
+// Holder history is committed only after successful dashboard composition.
 
 const activityByToken = tokenRows.map((token) => ({
   ...token,
   history: (tokenActivity.daily || []).filter((row) => row.tokenId === token.id).map((row) => ({
     ...row,
-    minted: token.decimals == null ? null : row.minted_raw / (10 ** token.decimals),
-    burned: token.decimals == null ? null : row.burned_raw / (10 ** token.decimals),
+    minted: token.decimals == null ? null : Number(row.minted_raw) / (10 ** token.decimals),
+    burned: token.decimals == null ? null : Number(row.burned_raw) / (10 ** token.decimals),
   })),
   holderHistory: holderHistory.map((point) => ({ date: point.date, holders: point.values[token.id] ?? null, ...(point.fieldStatus?.[token.id] || { availability: 'unknown', observedAt: null, retainedLastGood: false, source: 'legacy-holder-history' }) })),
 }));
@@ -611,9 +608,6 @@ const currentChainTvl = safeNumber((chainsResult.data || []).find((chain) => cha
 const rwaRequiredRows = rwaAssetRows.filter((row) => ['buidl', 'vbill', 'acred'].includes(row.assetId));
 const rwaRequiredValueUsd = rwaRequiredRows.length === 3 && rwaRequiredRows.every((row) => row.ok && row.valueUsd != null)
   ? sum(rwaRequiredRows.map((row) => row.valueUsd))
-  : null;
-const canonicalRequiredValueUsd = ['buidl', 'vbill', 'acred'].every((id) => Number.isFinite(tokenRows.find((row) => row.id === id)?.valueUsd))
-  ? sum(['buidl', 'vbill', 'acred'].map((id) => tokenRows.find((row) => row.id === id).valueUsd))
   : null;
 const verificationChecks = [
   buildVerificationCheck({
@@ -804,10 +798,10 @@ for (const rwa of rwaAssetRows) {
       sourceUrl: rwa.url,
       sourceAsOf: rwa.sourceAsOf,
       fetchedAt: rwa.fetchedAt,
-      scope: `Exact contract ${rwa.address}; canonical value uses the RedStone SECZ_EOD equity feed. RWA.xyz is context unless its observation timestamp and EOD basis are independently shown to match.`,
+      scope: `Exact contract ${rwa.address}; RedStone end-of-day equity price and RWA.xyz price are separate time/method observations, not identical NAV measurements.`,
       comparability: 'context',
       tolerancePct: null,
-      note: rwa.error || 'SECZ is valued canonically from its validated EOD equity feed; this comparator remains unscored because timestamp/basis equivalence is not established.',
+      note: 'RWA.xyz currently reports a value, but verification evidence does not silently promote it into the canonical KPI.',
     }));
   }
 }
@@ -818,7 +812,7 @@ verificationChecks.push(buildVerificationCheck({
   label: 'Verified tokenized contract value',
   metricId: 'tokenized_asset_value',
   unit: 'USD',
-  observedValue: canonicalRequiredValueUsd,
+  observedValue: tokenRows.filter(row => row.id !== 'secz').every(row => Number.isFinite(row.valueUsd)) ? sum(tokenRows.filter(row => row.id !== 'secz').map(row => row.valueUsd)) : null,
   comparatorValue: rwaRequiredValueUsd,
   comparatorLabel: 'RWA.xyz exact-contract sum',
   sourceId: 'rwa-xyz-public',
@@ -826,7 +820,7 @@ verificationChecks.push(buildVerificationCheck({
   sourceUrl: 'https://app.rwa.xyz/networks/avalanche',
   sourceAsOf: rwaRequiredRows.find((row) => row.sourceAsOf)?.sourceAsOf || null,
   fetchedAt: rwaRequiredRows.find((row) => row.fetchedAt)?.fetchedAt || null,
-  scope: 'BUIDL, VBILL, and ACRED exact Avalanche C-Chain contracts only; SECZ is excluded from both sides of this scored comparator aggregate and checked separately as unscored EOD context.',
+  scope: 'BUIDL, VBILL, and ACRED exact Avalanche C-Chain contracts. SECZ uses an EOD equity price and is excluded from this NAV-only comparison, not from the four-asset headline.',
   comparability: 'qualified',
   tolerancePct: 0.5,
   note: 'This aggregate is distinct from RWA.xyz’s broader all-Avalanche universe and DeFiLlama RWA protocol-adapter TVL.',
@@ -1007,6 +1001,7 @@ const payload = {
     generatedAt: new Date().toISOString(),
     kpis: tokenizedKpis,
     valueHistory: verifiedValueHistory,
+    valueHistorySource: 'canonical-observations',
     rwaAdapterValueHistory: rwaHistory,
     protocols: rwaProtocols,
     assets: activityByToken,
@@ -1018,10 +1013,6 @@ const payload = {
       block: canonicalTokenized.block,
       coverage: canonicalTokenized.coverage,
       aggregateValueUsd: canonicalTokenized.aggregateValueUsd,
-      aggregateValueUsdExact: canonicalTokenized.aggregateValueUsdExact,
-      aggregateStatus: canonicalTokenized.aggregateStatus,
-      aggregateLabel: canonicalTokenized.aggregateLabel,
-      aggregateEligibility: canonicalTokenized.aggregateEligibility,
     } : { source: 'avalanche_gateway', availability: 'unavailable', error: canonicalTokenizedResult.error || 'invalid canonical snapshot' },
     holderDefinition: 'Summed exact-contract address counts across four token contracts; an address appearing in multiple contracts is counted once per contract and is not a unique-investor count.',
     scope: {
@@ -1033,6 +1024,7 @@ const payload = {
     holderHistoryCoverageStart: holderHistory[0]?.date || null,
     dexVolume: [],
     dexCoverage: 'Asset-level DEX volume is withheld until verified pool coverage can distinguish direct swaps from multi-hop routes and internal vault activity.',
+    venueLandscape: tokenizedStockVenueLandscape(),
   },
   lending: {
     ...AVALANCHE_LENDING_SCOPE,
@@ -1098,7 +1090,10 @@ payload.lending.historyCoverage = { sourceLabel: 'DeFiLlama Avalanche-only refer
 const refreshedLending = updateDashboardLending(payload, lendingMetrics, referenceLlama);
 payload.lending = refreshedLending.lending;
 payload.quality = refreshedLending.quality;
-await writeJsonAtomic(STATE_OUTPUT, payload);
+const publication = updateDashboardTokenized(payload, canonicalTokenized);
+await writeJsonAtomic(STATE_OUTPUT, publication);
+await publishSnapshotBundle(ROOT, {'dashboard.json': publication, 'blockspace.json': blockspace, 'tokenized-activity.json': tokenActivity});
+await writeJsonAtomic(HOLDER_HISTORY, holderHistory);
 await writeJsonAtomic(CHECKPOINT, {
   lastSuccessfulRefresh: payload.generatedAt,
   latestCompleteDate,

@@ -7,6 +7,8 @@ import { fileURLToPath } from 'node:url';
 import { gzipSync } from 'node:zlib';
 import { createLivePulseService } from './live-pulse.mjs';
 import { createRadarService } from './radar-adapter.mjs';
+import { readPublishedSnapshot } from './scripts/snapshot-bundle.mjs';
+import { updateDashboardTokenized } from './scripts/tokenized-publisher.mjs';
 
 const ROOT = fileURLToPath(new URL('.', import.meta.url));
 const DIST = join(ROOT, 'dist');
@@ -33,6 +35,9 @@ const SEO_ROUTES = {
   '/verification/': { title: 'Avalanche Metrics Verification & Evidence Ledger', description: 'Review scope-aware Avalanche metric verification checks, comparator sources, tolerances, evidence dates, and explicitly unavailable comparisons.', heading: 'Avalanche metric verification and evidence ledger', copy: 'Inspect the source, scope, tolerance, observation date, and result for each comparator check. Comparator values never overwrite canonical dashboard metrics, and unavailable evidence is shown rather than inferred.' },
   '/tokenized-assets/': { title: 'Avalanche Tokenized Assets, Funds & RWA Evidence', description: 'Track verified native tokenized funds and equity on Avalanche with exact contracts, supply, RedStone valuation provenance, activity coverage, and broader non-additive RWA adapter TVL.', heading: 'Verified tokenized assets issued on Avalanche', copy: 'Review BUIDL, VBILL, ACRED, and SECZ exact-contract supply, valuation basis, source timestamps, activity coverage, issuer evidence, and broader protocol adapter TVL kept in a separate non-additive scope.' },
 };
+// Keep every established application view, without treating arbitrary paths as views.
+const SPA_ROUTES = new Set(['/', '/overview/', '/blockspace/', '/economics/', '/spot-trading/', '/lending/', ...Object.keys(SEO_ROUTES)]);
+const PUBLISHED_SNAPSHOTS = new Set(['dashboard.json', 'blockspace.json', 'tokenized-activity.json']);
 const livePulse = createLivePulseService({
   rpcUrl: process.env.AVALANCHE_RPC_URL,
   sampleSize: process.env.LIVE_PULSE_SAMPLE_SIZE,
@@ -55,7 +60,6 @@ const CONTENT_TYPES = {
   '.jpg': 'image/jpeg',
   '.js': 'text/javascript; charset=utf-8',
   '.json': 'application/json; charset=utf-8',
-  '.map': 'application/json; charset=utf-8',
   '.png': 'image/png',
   '.svg': 'image/svg+xml',
   '.webp': 'image/webp',
@@ -111,14 +115,21 @@ function publicPath(url) {
 
 function isPrivatePath(url) {
   const rawPath = String(url || '/').split('?')[0];
-  let decoded;
+  let decoded = rawPath;
   try {
-    decoded = decodeURIComponent(rawPath);
+    // Decode repeatedly before URL normalization so encoded separators/dot segments
+    // cannot become a harmless-looking route or static filename after this gate.
+    for (let depth = 0; depth < 4; depth += 1) {
+      const next = decodeURIComponent(decoded);
+      if (next === decoded) break;
+      decoded = next;
+    }
   } catch {
     return true;
   }
+  if (/[\\%\x00-\x1f\x7f]/.test(decoded)) return true;
   const relative = decoded.startsWith(`${PREFIX}/`) ? decoded.slice(PREFIX.length) : decoded;
-  const segments = relative.split('/').filter(Boolean);
+  const segments = relative.toLowerCase().split('/').filter(Boolean);
   const privateRoots = new Set(['state', 'config', 'scripts', 'src', 'test', 'deploy', 'tasks', 'reports', 'node_modules']);
   return segments.some((segment) => segment === '..' || segment.startsWith('.'))
     || privateRoots.has(segments[0])
@@ -126,16 +137,38 @@ function isPrivatePath(url) {
     || /\.(?:map|env|ini|log|md|mjs|cjs|jsx|tsx?|ya?ml)$/i.test(segments.at(-1) || '');
 }
 
-async function readDashboard() {
-  for (const filename of [join(ROOT, 'state', 'dashboard.json'), join(DATA, 'dashboard.json')]) {
-    try {
-      return JSON.parse(await readFile(filename, 'utf8'));
-    } catch (error) {
-      if (error.code !== 'ENOENT') throw error;
-    }
+function applyTokenizedServeFreshness(dashboard, now = Date.now()) {
+  const sourceTime = Date.parse(dashboard.tokenizedAssets?.canonicalSnapshot?.generatedAt);
+  if (!Number.isFinite(sourceTime) || now - sourceTime <= 900_000) return dashboard;
+  const next = updateDashboardTokenized(dashboard, null, { now, error: 'Canonical tokenized snapshot is older than 15 minutes' });
+  // Serving does not constitute publication or a successful source fetch.
+  if (Object.hasOwn(dashboard.tokenizedAssets, 'updatedAt')) next.tokenizedAssets.updatedAt = dashboard.tokenizedAssets.updatedAt;
+  else delete next.tokenizedAssets.updatedAt;
+  const sourceId = 'avalanche-gateway-tokenized-assets';
+  const previousHealth = dashboard.quality?.sourceHealth?.find((row) => row.id === sourceId);
+  const nextHealth = next.quality?.sourceHealth?.find((row) => row.id === sourceId);
+  if (nextHealth) {
+    if (previousHealth && Object.hasOwn(previousHealth, 'fetchedAt')) nextHealth.fetchedAt = previousHealth.fetchedAt;
+    else delete nextHealth.fetchedAt;
   }
-  throw Object.assign(new Error('No dashboard snapshot'), { code: 'ENOENT' });
+  return next;
 }
+
+async function readSnapshot(name) {
+  const snapshot = await readPublishedSnapshot(ROOT, name, async () => {
+    for (const filename of [join(ROOT, 'state', name), join(DATA, name)]) {
+      try {
+        return JSON.parse(await readFile(filename, 'utf8'));
+      } catch (error) {
+        if (error.code !== 'ENOENT') throw error;
+      }
+    }
+    throw Object.assign(new Error('No published snapshot'), { code: 'ENOENT' });
+  });
+  return name === 'dashboard.json' ? applyTokenizedServeFreshness(snapshot) : snapshot;
+}
+
+const readDashboard = () => readSnapshot('dashboard.json');
 
 async function handleApi(request, response, pathname) {
   if (pathname === '/api/radar') {
@@ -197,11 +230,7 @@ async function handleApi(request, response, pathname) {
       const dashboard = await readDashboard();
       const ageSeconds = Math.max(0, (Date.now() - Date.parse(dashboard.generatedAt)) / 1000);
       const degraded = dashboard.metadata?.freshness !== 'healthy';
-      // A readable cached snapshot is a successful health response even when
-      // its payload reports degraded upstream freshness. This keeps offline
-      // snapshot deployments usable while preserving the degraded signal in
-      // the response body.
-      sendJson(request, response, 200, {
+      sendJson(request, response, degraded ? 207 : 200, {
         status: degraded ? 'degraded' : 'ok',
         generatedAt: dashboard.generatedAt,
         ageSeconds: Math.round(ageSeconds),
@@ -267,7 +296,9 @@ async function sendFile(request, response, filename) {
 }
 
 async function sendSpaIndex(request, response, pathname) {
-  const route = SEO_ROUTES[pathname.endsWith('/') ? pathname : `${pathname}/`];
+  const normalizedRoute = pathname.endsWith('/') ? pathname : `${pathname}/`;
+  if (!SPA_ROUTES.has(normalizedRoute)) return sendJson(request, response, 404, { error: 'not_found' });
+  const route = SEO_ROUTES[normalizedRoute];
   if (!route) return sendFile(request, response, join(DIST, 'index.html'));
   let body = await readFile(join(DIST, 'index.html'), 'utf8');
   const canonical = `https://couchdicks.org/avalanche/ecosystem${pathname.endsWith('/') ? pathname : `${pathname}/`}`;
@@ -325,14 +356,26 @@ const server = createServer(async (request, response) => {
   }
 
   // Only the explicitly published snapshots may bypass the immutable build.
-  if (['/data/dashboard.json', '/data/blockspace.json', '/data/tokenized-activity.json'].includes(pathname)) {
-    try { await sendFile(request, response, join(DATA, pathname.slice('/data/'.length))); }
+  const snapshotName = pathname.startsWith('/data/') ? pathname.slice('/data/'.length) : null;
+  if (PUBLISHED_SNAPSHOTS.has(snapshotName)) {
+    try {
+      sendJson(request, response, 200, await readSnapshot(snapshotName));
+    }
     catch { sendJson(request, response, 503, { error: 'published_snapshot_unavailable' }); }
     return;
   }
 
-  if (pathname === '/' || SEO_ROUTES[pathname.endsWith('/') ? pathname : `${pathname}/`]) {
-    await sendSpaIndex(request, response, pathname);
+  if (SPA_ROUTES.has(pathname.endsWith('/') ? pathname : `${pathname}/`)) {
+    try { await sendSpaIndex(request, response, pathname); }
+    catch { sendJson(request, response, 503, { error: 'frontend_unavailable' }); }
+    return;
+  }
+  // Do not expose incidental files copied into dist. Only built assets, the shared
+  // theme controller, and explicit public documents are routable static content.
+  const isStatic = /^\/(?:assets|cd-ui)\/[a-zA-Z0-9_./-]+\.(?:js|css|svg|png|jpe?g|webp|ico|woff2?|ttf)$/.test(pathname)
+    || ['/sitemap.xml', '/robots.txt', '/favicon.ico', '/index.html'].includes(pathname);
+  if (!isStatic) {
+    sendJson(request, response, 404, { error: 'not_found' });
     return;
   }
   const requested = pathname.replace(/^\/+/, '');
@@ -347,14 +390,7 @@ const server = createServer(async (request, response) => {
       sendJson(request, response, 500, { error: 'internal_error' });
       return;
     }
-    try {
-      await sendSpaIndex(request, response, pathname);
-    } catch {
-      sendJson(request, response, 503, {
-        error: 'frontend_unavailable',
-        detail: 'Run npm run build before starting the production server.',
-      });
-    }
+    sendJson(request, response, 404, { error: 'not_found' });
   }
 });
 

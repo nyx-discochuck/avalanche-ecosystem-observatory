@@ -24,3 +24,4 @@
 - A contract value is reported only where an exact mapped product adapter supplies a defensible value. SECZ value remains unavailable.
 - Holder counts depend on explorer indexing. Failed reads retain the last-good value with its original observation timestamp and a stale state; missing coverage is never displayed as zero.
 - Mint/burn history covers the bounded local event archive. Amounts require verified token decimals, and historical USD mint/burn value is withheld without observation-date NAV.
+

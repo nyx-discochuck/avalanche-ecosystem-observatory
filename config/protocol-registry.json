@@ -235,17 +235,20 @@
           "implementation": "0xf93667d01c7675e2667ee392aa69104df79c4ad0"
         }
       ],
-      "source": "Securitize issuer data, verified bytecode, and DeFiLlama token TVL",
+      "source": "Exact Avalanche contract state \u00d7 validated RedStone valuation; canonical Gateway materialization",
       "confidence": "high",
       "issuer": "BlackRock / Securitize",
       "issuerUrl": "https://www.blackrock.com/corporate/newsroom/press-releases/article/corporate-one/press-releases/blackrock-launches-first-tokenized-fund-buidl-on-the-ethereum-network",
       "productUrl": "https://securitize.io/learn/press/blackrock-buidl-expands-to-multi-chains",
       "sourceLinks": [
         "https://securitize.io/learn/press/blackrock-buidl-expands-to-multi-chains",
-        "https://snowtrace.io/address/0x53fc82f14f009009b440a706e31c9021e1196a2f"
+        "https://snowtrace.io/address/0x53fc82f14f009009b440a706e31c9021e1196a2f",
+        "https://snowscan.xyz/address/0xebE443E20ADf302B59419648c4dbA0c7299cf1A2"
       ],
       "classification": "verified-native-issuance",
-      "valuationBasis": "Canonical Avalanche Gateway exact supply \u00d7 validated RedStone feed; source timestamps and retained/stale state are preserved."
+      "valuationBasis": "fundamental-nav",
+      "valuationFeed": "0xebE443E20ADf302B59419648c4dbA0c7299cf1A2",
+      "note": "Fundamental NAV \u00d7 exact-contract supply. Daily accrual is not added to NAV or labeled APY."
     },
     {
       "id": "vbill",
@@ -260,17 +263,20 @@
           "implementation": "0xc7579a9a4801a805b66742e5bd56a1581705fe0d"
         }
       ],
-      "source": "Securitize issuer data, verified bytecode, and DeFiLlama token TVL",
+      "source": "Exact Avalanche contract state \u00d7 validated RedStone valuation; canonical Gateway materialization",
       "confidence": "high",
       "issuer": "VanEck / Securitize",
       "issuerUrl": "https://www.vaneck.com/us/en/investments/vaneck-treasury-fund/",
       "productUrl": "https://securitize.io/learn/press/vaneck-launches-tokenized-treasury-fund-vbill-on-securitize",
       "sourceLinks": [
         "https://www.vaneck.com/us/en/investments/vaneck-treasury-fund/",
-        "https://snowtrace.io/address/0x7f4546ef315efc65336187fe3765ea779ac90183"
+        "https://snowtrace.io/address/0x7f4546ef315efc65336187fe3765ea779ac90183",
+        "https://snowscan.xyz/address/0x53E57c2acBa2f9919ff545aa595Ff691B90d36a8"
       ],
       "classification": "verified-native-issuance",
-      "valuationBasis": "Canonical Avalanche Gateway exact supply \u00d7 validated RedStone feed; source timestamps and retained/stale state are preserved."
+      "valuationBasis": "fundamental-nav",
+      "valuationFeed": "0x53E57c2acBa2f9919ff545aa595Ff691B90d36a8",
+      "note": "Fundamental NAV \u00d7 exact-contract supply. Daily accrual is not added to NAV or labeled APY."
     },
     {
       "id": "acred",
@@ -285,43 +291,47 @@
           "implementation": "0x3bfcfc2b71aad49c46767f8ec2aba78fbdaad407"
         }
       ],
-      "source": "Securitize issuer data, verified bytecode, and DeFiLlama token TVL",
+      "source": "Exact Avalanche contract state \u00d7 validated RedStone valuation; canonical Gateway materialization",
       "confidence": "high",
       "issuer": "Apollo / Securitize",
       "issuerUrl": "https://securitize.io/learn/press/apollo-and-securitize-announce-partnership-and-launch-tokenized-access-to-credit-fund",
       "productUrl": "https://securitize.io/learn/press/apollo-and-securitize-announce-partnership-and-launch-tokenized-access-to-credit-fund",
       "sourceLinks": [
         "https://securitize.io/learn/press/apollo-and-securitize-announce-partnership-and-launch-tokenized-access-to-credit-fund",
-        "https://snowtrace.io/address/0x7c64925002bfa705834b118a923e9911bee32875"
+        "https://snowtrace.io/address/0x7c64925002bfa705834b118a923e9911bee32875",
+        "https://snowscan.xyz/address/0x4BAD96DD1C7D541270a0C92e1D4e5f12EEEA7a57"
       ],
       "classification": "verified-native-issuance",
-      "valuationBasis": "Canonical Avalanche Gateway exact supply \u00d7 validated RedStone feed; source timestamps and retained/stale state are preserved."
+      "valuationBasis": "fundamental-nav",
+      "valuationFeed": "0x4BAD96DD1C7D541270a0C92e1D4e5f12EEEA7a57",
+      "note": "Fundamental NAV \u00d7 exact-contract supply. Daily accrual is not added to NAV or labeled APY."
     },
     {
       "id": "secz",
       "name": "Securitize SECZ",
-      "category": "Tokenized public equity",
+      "category": "Tokenized equity",
       "architecture": "permissioned ERC-20",
       "contracts": [
         {
           "role": "Token",
           "address": "0x5954fF4099ac47C4d6D098A9216f3278BB8C9506",
-          "proxy": true,
-          "implementation": "0x18295407744efa5c3fed0318c1f37abe8a5e2d45"
+          "proxy": true
         }
       ],
-      "source": "Securitize issuer announcement and verified onchain metadata",
+      "source": "Exact Avalanche contract state \u00d7 validated RedStone valuation; canonical Gateway materialization",
       "confidence": "high",
       "issuer": "Securitize",
       "issuerUrl": "https://securitize.io/",
       "productUrl": "https://securitize.io/",
       "sourceLinks": [
         "https://securitize.io/",
-        "https://snowtrace.io/address/0x5954fF4099ac47C4d6D098A9216f3278BB8C9506"
+        "https://snowtrace.io/address/0x5954fF4099ac47C4d6D098A9216f3278BB8C9506",
+        "https://snowscan.xyz/address/0x29d2fEC890B037B2d34f061F9a50f76F85ddBcAE"
       ],
       "classification": "verified-native-issuance",
-      "valuationBasis": "Canonical Avalanche Gateway exact supply \u00d7 validated RedStone feed; source timestamps and retained/stale state are preserved.",
-      "note": "Value uses the validated RedStone SECZ_EOD end-of-day equity price; it is not NAV or an intraday quote."
+      "valuationBasis": "end-of-day-equity-price",
+      "note": "Exact-contract value only. SECZ uses EOD equity price, not NAV. Issuer/feed timestamps remain separate from the supply block.",
+      "valuationFeed": "0x29d2fEC890B037B2d34f061F9a50f76F85ddBcAE"
     }
   ]
 }

@@ -54,3 +54,4 @@ for (const metric of catalog.metrics || []) {
 
 if (failed) process.exit(1);
 console.log(`validated ${registry.protocols?.length || 0} protocols, ${addresses.length} contracts, and ${ids.length} metrics`);
+

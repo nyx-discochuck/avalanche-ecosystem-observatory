@@ -5,7 +5,7 @@ import test from 'node:test';
 const root = new URL('../', import.meta.url);
 const readJson = async (path) => JSON.parse(await readFile(new URL(path, root), 'utf8'));
 const [dashboard, registry, catalog, sources, lendingConfig] = await Promise.all([
-  readJson('public/data/dashboard.json'),
+  readJson('state/dashboard.json'),
   readJson('config/protocol-registry.json'),
   readJson('config/metric-catalog.json'),
   readJson('config/sources.json'),
@@ -44,7 +44,7 @@ test('verified contracts are valid, unique Avalanche addresses', () => {
 });
 
 test('blockspace observations reconcile their formulas', () => {
-  assert.ok(dashboard.blockspace.daily.length > 0);
+  assert.ok(dashboard.blockspace.daily.length >= 28);
   for (const [index, row] of dashboard.blockspace.daily.entries()) {
     assert.ok(row.transactions > 0);
     assert.ok(row.blocks > 0);
@@ -162,14 +162,14 @@ test('stablecoins and tokenized funds are represented in separate classification
   const broaderRwaAdapterTvl = dashboard.tokenizedAssets.protocols.reduce((total, protocol) => total + protocol.tvl, 0);
   assert.ok(rwaSymbols.has('BUIDL'));
   assert.ok(!stableSymbols.has('BUIDL'));
-  assert.ok(dashboard.overview.kpis.stablecoinMarketCapUsd >= 0);
+  assert.ok(dashboard.overview.kpis.stablecoinMarketCapUsd > 0);
   assert.ok(verifiedContractValue == null
     ? dashboard.tokenizedAssets.kpis.verifiedContractValueUsd == null
     : Math.abs(dashboard.tokenizedAssets.kpis.verifiedContractValueUsd - verifiedContractValue) < 0.01);
   assert.equal(dashboard.tokenizedAssets.kpis.trackedValueUsd, dashboard.tokenizedAssets.kpis.verifiedContractValueUsd);
   assert.ok(Math.abs(dashboard.tokenizedAssets.kpis.rwaAdapterTvlUsd - broaderRwaAdapterTvl) < 0.01);
-  assert.ok(dashboard.tokenizedAssets.kpis.verifiedContractValueUsd == null
-    || dashboard.tokenizedAssets.kpis.rwaAdapterTvlUsd > dashboard.tokenizedAssets.kpis.verifiedContractValueUsd);
+  // Independent scopes have no required size ordering: equity/NAV value is not adapter TVL.
+  assert.ok(dashboard.tokenizedAssets.assets.every(row => row.valueUsd == null || row.valuationBasis));
   assert.equal(dashboard.overview.kpis.tokenizedAssetValueUsd, dashboard.tokenizedAssets.kpis.verifiedContractValueUsd);
   assert.equal(dashboard.overview.kpis.rwaAdapterTvlUsd, dashboard.tokenizedAssets.kpis.rwaAdapterTvlUsd);
 });
@@ -183,16 +183,14 @@ test('protocol-type TVL is explicitly non-additive', () => {
 
 });
 
-test('source freshness is explicit and every observed source is healthy', () => {
-  assert.ok(['healthy', 'degraded'].includes(dashboard.metadata.freshness));
+test('source freshness is explicit and agrees with observed source health', () => {
   assert.ok(dashboard.metadata.latestCompleteDate);
   assert.equal(dashboard.metadata.partialDay, true);
   assert.ok(dashboard.quality.sourceHealth.length >= 6);
-  assert.ok(dashboard.quality.sourceHealth.some((source) => source.ok));
-  assert.equal(
-    dashboard.metadata.freshness === 'healthy',
-    dashboard.quality.sourceHealth.filter((source) => source.required !== false).every((source) => source.ok),
-  );
+  assert.ok(dashboard.quality.sourceHealth.every((source) => typeof source.ok === 'boolean'));
+  const allSourcesHealthy = dashboard.quality.sourceHealth.every((source) => source.ok);
+  assert.equal(dashboard.metadata.freshness, allSourcesHealthy ? 'healthy' : 'degraded');
+  assert.equal(dashboard.status.healthy, allSourcesHealthy);
 });
 
 test('cross-source verification is scope-aware, source-linked, and non-mutating', () => {
@@ -204,9 +202,9 @@ test('cross-source verification is scope-aware, source-linked, and non-mutating'
   assert.equal(verification.summary.total, verification.checks.length);
   assert.equal(verification.summary.review, verification.checks.filter((check) => check.status === 'review').length);
   assert.equal(verification.summary.pass, verification.checks.filter((check) => check.status === 'pass').length);
-  assert.ok(verification.summary.pass >= 0);
+  assert.ok(verification.summary.pass >= 4);
   assert.equal(verification.summary.pass + verification.summary.review, verification.summary.scored);
-  assert.ok(verification.summary.context >= 0);
+  assert.ok(verification.summary.context >= 2);
   assert.ok(verification.summary.unavailable >= 1);
 
   for (const check of verification.checks) {
@@ -224,8 +222,8 @@ test('cross-source verification is scope-aware, source-linked, and non-mutating'
   const rwaChecks = verification.checks.filter((check) => check.id.startsWith('rwa-'));
   assert.ok(rwaChecks.length >= 9);
   assert.ok(rwaChecks.every((check) => check.comparator.url.includes('rwa.xyz')));
-  assert.equal(verification.checks.find((check) => check.id === 'rwa-secz-value').status, 'unavailable');
-  assert.equal(dashboard.tokenizedAssets.assets.find((asset) => asset.id === 'secz').valueUsd, null);
+  assert.equal(verification.checks.find((check) => check.id === 'rwa-secz-value').comparability, 'context');
+  assert.equal(dashboard.tokenizedAssets.assets.find((asset) => asset.id === 'secz').valuationBasis, 'end-of-day-equity-price');
   assert.equal(dashboard.overview.kpis.tokenizedAssetValueUsd, dashboard.tokenizedAssets.kpis.verifiedContractValueUsd);
 });
 
@@ -252,7 +250,7 @@ test('semantic cleanup invariants reconcile scopes without fake values', () => {
 
   assert.equal(dashboard.tokenizedAssets.kpis.valuedAssets, dashboard.tokenizedAssets.assets.filter((row) => row.valueUsd != null).length);
   assert.equal(dashboard.tokenizedAssets.kpis.trackedAssets, dashboard.tokenizedAssets.assets.length);
-  assert.ok(dashboard.overview.bridges.protocols.every((row) => row.operationalStatus === 'unknown'));
+  assert.deepEqual(new Set(dashboard.overview.bridges.protocols.map((row) => row.operationalStatus)), new Set(['unknown']));
   assert.ok(dashboard.overview.bridges.protocols.every((row) => row.operationalStatusSourceUrl === null && row.operationalStatusCheckedAt === null));
   assert.equal(dashboard.quality.verification.summary.pass, dashboard.quality.verification.checks.filter((check) => check.status === 'pass').length);
 });
@@ -270,11 +268,6 @@ test('thirty-day annualized burn is the displayed thirty-day daily average times
 test('DEX completed-day headline is separated from current partial-day architecture', () => {
   for (const scope of [dashboard.overview.dex, dashboard.spot]) {
     assert.ok(['current-utc-day-partial', 'latest-available-utc-day'].includes(scope.architectureCoverage.window));
-    if (scope.architectureCoverage.date == null) {
-      assert.equal(scope.architectureCoverage.totalVolumeUsd, null);
-      assert.deepEqual(scope.architectureComposition, []);
-      continue;
-    }
     const architectureDay = Date.parse(`${scope.architectureCoverage.date}T00:00:00Z`);
     const generatedDay = Date.parse(`${dashboard.generatedAt.slice(0, 10)}T00:00:00Z`);
     assert.ok(architectureDay <= generatedDay);
@@ -292,7 +285,7 @@ test('DEX completed-day headline is separated from current partial-day architect
 
 test('DEX history exposes one combined Pharaoh liquidity source', () => {
   for (const scope of [dashboard.overview.dex, dashboard.spot]) {
-    if (scope.breakdownHistory.length) assert.ok(scope.breakdownHistory.some((row) => row.Pharaoh > 0));
+    assert.ok(scope.breakdownHistory.some((row) => row.Pharaoh > 0));
     for (const row of scope.breakdownHistory) {
       const pharaohKeys = Object.keys(row).filter((key) => /^pharaoh(?:\s|$)/i.test(key));
       assert.deepEqual(pharaohKeys, row.Pharaoh == null ? [] : ['Pharaoh']);

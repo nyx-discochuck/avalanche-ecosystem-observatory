@@ -5,15 +5,16 @@ Wants=network-online.target
 
 [Service]
 Type=oneshot
-WorkingDirectory=__APP_DIR__
+WorkingDirectory=/home/openclaw/avalanche-ecosystem-dashboard
 Environment=NODE_ENV=production
-EnvironmentFile=-__APP_DIR__/.env
-ExecStart=/usr/bin/node __APP_DIR__/scripts/collect.mjs
+EnvironmentFile=-/home/openclaw/avalanche-ecosystem-dashboard/.env
+ExecStart=/usr/bin/node /home/openclaw/avalanche-ecosystem-dashboard/scripts/collect.mjs
 Nice=10
 NoNewPrivileges=true
 PrivateTmp=true
 ProtectHome=read-only
 ProtectSystem=strict
-ReadWritePaths=__APP_DIR__/public/data __APP_DIR__/state
+ReadOnlyPaths=/home/openclaw/.openclaw/workspace/archive/avax-data-parquet
+ReadWritePaths=/home/openclaw/avalanche-ecosystem-dashboard/public/data /home/openclaw/avalanche-ecosystem-dashboard/state
 StandardOutput=journal
 StandardError=journal

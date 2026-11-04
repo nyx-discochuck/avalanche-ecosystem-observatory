@@ -54,15 +54,15 @@
       "label": "Tokenized Asset Value",
       "unit": "USD",
       "definition": "Current value attributable to the registry-authenticated Avalanche tokenized-asset contracts, excluding ordinary stablecoins.",
-      "formula": "Sum the current Avalanche value for protocol identities mapped one-to-one to verified token contracts; contracts without a defensible current value remain null.",
+      "formula": "Sum totalSupply / 10^tokenDecimals \u00d7 validated RedStone answer / 10^feedDecimals for all four exact Avalanche contracts. Incomplete baskets expose a partial subtotal separately; the four-asset headline is unavailable.",
       "sources": [
-        "defillama-tvl",
-        "routescan"
+        "redstone-tokenized-valuations",
+        "avalanche-public-rpc"
       ],
-      "cadence": "daily",
+      "cadence": "Five-minute source refresh; published within one minute",
       "coverageStart": "source dependent",
       "confidence": "high",
-      "limitations": "Issuer NAV timing differs; the total excludes broader RWA protocol adapters that are not part of the verified contract set."
+      "limitations": "BUIDL/VBILL/ACRED use fundamental NAV; SECZ uses end-of-day equity price, not NAV or a live quote. Source timestamps remain independent. Hard-expired values are excluded. Adapter TVL and comparator estimates are non-additive."
     },
     {
       "id": "rwa_adapter_tvl",
@@ -414,7 +414,7 @@
     },
     {
       "id": "tokenized_asset_holders",
-      "label": "Verified Tokenized Asset Holders",
+      "label": "Summed Contract Addresses",
       "unit": "addresses",
       "definition": "Current explorer-reported holder addresses summed across verified tokenized-asset contracts.",
       "formula": "Sum current token holder count for each verified token contract.",
@@ -424,7 +424,7 @@
       "cadence": "daily",
       "coverageStart": "2026-07-24 on this deployment",
       "confidence": "medium",
-      "limitations": "Addresses are not people, one address may hold multiple assets, and history starts with this deployment."
+      "limitations": "Exact-contract address counts summed across the four assets, not unique wallets or investors. Retained observations keep their original timestamps."
     },
     {
       "id": "tokenized_mint_burn",

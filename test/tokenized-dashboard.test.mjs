@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { activityFreshness, fieldFromSourceEnvelope, independentObservedField, materializeCoveredActivityRows, observationState, preserveLastGood, summarizeTokenized } from '../scripts/tokenized-dashboard.mjs';
+import { activityFreshness, fieldFromSourceEnvelope, independentObservedField, materializeCoveredActivityRows, observationState, preserveLastGood, summarizeTokenized, tokenizedStockVenueLandscape } from '../scripts/tokenized-dashboard.mjs';
 
 const now = Date.parse('2026-09-18T12:00:00Z');
 
@@ -38,7 +38,8 @@ test('missing holder observations are unavailable rather than a fabricated zero'
   assert.equal(summary.verifiedHolders, null);
   assert.equal(summary.holderAvailability, 'unavailable');
   assert.equal(summary.valueAvailability, 'partial');
-  assert.equal(summary.verifiedContractValueUsd, 10);
+  assert.equal(summary.verifiedContractValueUsd, null);
+  assert.equal(summary.partialObservedValueUsd, 10);
 });
 
 test('freshness exposes stale activity and partial source state', () => {
@@ -56,4 +57,23 @@ test('fully covered archive dates emit explicit per-contract zeros without inven
   assert.equal(rows[1].explicitZero, true);
   assert.equal(rows[2].explicitZero, true);
   assert.equal(rows.some((row) => row.date === '2026-09-10'), false);
+});
+
+test('Pharaoh is modeled as an announced venue without fabricated live market or operating details', () => {
+  const landscape = tokenizedStockVenueLandscape(Date.parse('2026-10-01T23:26:00Z'));
+  const pharaoh = landscape.venues.find((row) => row.id === 'pharaoh-tokenized-stocks');
+  assert.equal(landscape.ranking.metric, 'Seven-day net deposits');
+  assert.equal(landscape.ranking.window, 'rolling-7d');
+  assert.equal(landscape.ranking.availability, 'unavailable');
+  assert.deepEqual(landscape.ranking.entries, []);
+  assert.equal(pharaoh.lifecycle, 'announced-not-live');
+  assert.equal(pharaoh.availability, 'not-live');
+  assert.equal(pharaoh.netDeposits7dUsd, null);
+  assert.equal(pharaoh.volumeUsd, null);
+  assert.equal(pharaoh.launchDate, null);
+  assert.deepEqual(pharaoh.tokenContracts, []);
+  assert.equal(pharaoh.issuer, null);
+  assert.equal(pharaoh.custody, null);
+  assert.equal(pharaoh.regulatoryDetails, null);
+  assert.match(pharaoh.sourceUrl, /^https:\/\/x\.com\/avax\/status\//);
 });

@@ -1,18 +1,51 @@
 const DAY_MS = 86_400_000;
-const GATEWAY_SCHEMA = 'avalanche-gateway-tokenized-assets/v2';
-const GATEWAY_REGISTRY_VERSION = 'avalanche-tokenized-assets-registry/2026-09-18';
-const EXPECTED_ASSETS = Object.freeze({
-  buidl: '0x53fc82f14f009009b440a706e31c9021e1196a2f',
-  vbill: '0x7f4546ef315efc65336187fe3765ea779ac90183',
-  acred: '0x7c64925002bfa705834b118a923e9911bee32875',
-  secz: '0x5954ff4099ac47c4d6d098a9216f3278bb8c9506',
-});
+
+export function tokenizedStockVenueLandscape(now = Date.now()) {
+  const rankingObservedAt = null;
+  const rankingAgeMs = rankingObservedAt ? now - Date.parse(rankingObservedAt) : null;
+  return {
+    schema: 'couchdicks.avalanche.tokenized-stock-venues.v1',
+    scope: 'Venue-level productive use of tokenized stocks; separate from native Avalanche issuance, verified contract value, and broader RWA adapter TVL.',
+    ranking: {
+      provider: 'Token Terminal',
+      metric: 'Seven-day net deposits',
+      window: 'rolling-7d',
+      availability: rankingObservedAt == null ? 'unavailable' : (rankingAgeMs > DAY_MS ? 'stale' : 'available'),
+      observedAt: rankingObservedAt,
+      sourceUrl: 'https://tokenterminal.com/explorer/tokenized-assets/stocks',
+      sourceLabel: 'Token Terminal · tokenized stocks explorer',
+      entries: [],
+      limitation: 'The ranking is live and rolling at the source. No source-observed venue values or observation timestamp are available in this snapshot, so ranks and net deposits are not copied or inferred.',
+    },
+    venues: [{
+      id: 'pharaoh-tokenized-stocks',
+      name: 'Pharaoh',
+      chain: 'Avalanche',
+      venueType: 'DEX',
+      lifecycle: 'announced-not-live',
+      availability: 'not-live',
+      plan: 'Permissionless 24/7 trading of tokenized U.S. stocks',
+      evidenceObservedAt: '2026-09-16T16:47:00Z',
+      evidenceType: 'official-ecosystem-announcement',
+      sourceUrl: 'https://x.com/avax/status/2100265352710037622',
+      sourceLabel: 'Avalanche announcement',
+      netDeposits7dUsd: null,
+      volumeUsd: null,
+      launchDate: null,
+      tokenContracts: [],
+      issuer: null,
+      custody: null,
+      regulatoryDetails: null,
+      limitation: 'Announced plan only. The cited source says Pharaoh is planning the venue; it does not establish a live market or disclose launch timing, contracts, issuer, custody, regulatory details, deposits, or volume.',
+    }],
+  };
+}
 
 export function materializeCoveredActivityRows(dates, tokens, sparseRows) {
   const sparseByKey = new Map(sparseRows.map((row) => [`${row.date}:${row.address.toLowerCase()}`, row]));
   return dates.flatMap((date) => tokens.map((token) => sparseByKey.get(`${date}:${token.address.toLowerCase()}`) || ({
     date, address: token.address.toLowerCase(), transfers: 0, mint_events: 0, burn_events: 0,
-    minted_raw: '0', burned_raw: '0', participant_sides: 0, explicitZero: true,
+    minted_raw: 0, burned_raw: 0, participant_sides: 0, explicitZero: true,
   })));
 }
 
@@ -40,7 +73,7 @@ export function fieldFromSourceEnvelope(envelope, { previousValue = null, previo
       },
     };
   }
-  if (envelope?.expired) {
+  if (envelope && envelope.availability === 'unavailable') {
     return {
       value: null,
       status: {
@@ -77,7 +110,7 @@ export function fieldFromSourceEnvelope(envelope, { previousValue = null, previo
 export function independentObservedField({ ok, value, fetchedAt, error, previousValue = null, previousStatus = null }) {
   return fieldFromSourceEnvelope(ok && value != null ? {
     value, observedAt: fetchedAt || null, availability: 'available', error: null, retainedLastGood: false,
-  } : { value: null, observedAt: fetchedAt || null, availability: 'unavailable', error: error || 'source unavailable', retainedLastGood: false }, {
+  } : null, {
     previousValue, previousStatus, sourceError: error || 'source unavailable',
   });
 }
@@ -119,100 +152,29 @@ export function composeTokenizedEvidence({ canonicalSnapshot = null, comparators
 export function summarizeTokenized(assets, adapterTvlUsd) {
   const valued = assets.filter((row) => Number.isFinite(row.valueUsd));
   const holderRows = assets.filter((row) => Number.isFinite(row.holders));
-  const valueUsd = valued.length ? valued.reduce((total, row) => total + row.valueUsd, 0) : null;
+  const partialObservedValueUsd = valued.length ? valued.reduce((total, row) => total + row.valueUsd, 0) : null;
+  const valueUsd = valued.length === assets.length ? partialObservedValueUsd : null;
   const holders = holderRows.length ? holderRows.reduce((total, row) => total + row.holders, 0) : null;
   const includedAssetIds = valued.map((row) => row.id);
   const excludedAssetIds = assets.filter((row) => !valued.includes(row)).map((row) => row.id);
   return {
     verifiedTokenContracts: assets.length,
     trackedValueUsd: valueUsd,
+    partialObservedValueUsd,
     verifiedContractValueUsd: valueUsd,
     rwaAdapterTvlUsd: Number.isFinite(adapterTvlUsd) ? adapterTvlUsd : null,
     verifiedHolders: holders,
     valuedAssets: valued.length,
     holderAssets: holderRows.length,
     trackedAssets: assets.length,
-    valueAvailability: valued.length === 0 ? 'unavailable' : (valued.length === assets.length ? 'available' : 'partial'),
-    holderAvailability: holderRows.length === 0 ? 'unavailable' : (holderRows.length === assets.length ? 'available' : 'partial'),
+    valueAvailability: valued.length === 0 ? 'unavailable' : (valued.length !== assets.length ? 'partial' : valued.some(row => ['stale', 'unavailable'].includes(row.fieldStatus?.valueUsd?.availability)) ? 'stale' : 'available'),
+    holderAvailability: holderRows.length === 0 ? 'unavailable' : (holderRows.length !== assets.length ? 'partial' : holderRows.some(row => row.fieldStatus?.holders?.availability !== 'available') ? 'stale' : 'available'),
     contractCoverage: `${assets.length}/${assets.length}`,
     valueCoverage: `${valued.length}/${assets.length}`,
     holderCoverage: `${holderRows.length}/${assets.length}`,
     includedAssetIds,
     excludedAssetIds,
   };
-}
-
-export function updateDashboardTokenizedFromGateway(dashboard, snapshot) {
-  if (snapshot?.schemaVersion !== GATEWAY_SCHEMA || snapshot.registryVersion !== GATEWAY_REGISTRY_VERSION || !Array.isArray(snapshot.assets) || snapshot.assets.length !== 4) throw new Error('invalid canonical tokenized Gateway envelope');
-  const canonicalById = new Map(snapshot.assets.map((row) => [row.id, row]));
-  if (canonicalById.size !== 4 || Object.entries(EXPECTED_ASSETS).some(([id, address]) => canonicalById.get(id)?.address?.toLowerCase() !== address)) throw new Error('canonical tokenized Gateway registry mismatch');
-  const previous = dashboard.tokenizedAssets || {};
-  const previousAssets = new Map((previous.assets || []).map((row) => [row.id, row]));
-  const assets = Object.keys(EXPECTED_ASSETS).map((id) => {
-    const old = previousAssets.get(id) || { id, address: EXPECTED_ASSETS[id] };
-    const canonical = canonicalById.get(id);
-    const totalSupply = fieldFromSourceEnvelope(canonical.token?.totalSupply, { previousValue: old.totalSupply, previousStatus: old.fieldStatus?.totalSupply });
-    const symbol = fieldFromSourceEnvelope(canonical.token?.symbol, { previousValue: old.symbol, previousStatus: old.fieldStatus?.symbol });
-    const tokenName = fieldFromSourceEnvelope(canonical.token?.tokenName, { previousValue: old.tokenName, previousStatus: old.fieldStatus?.tokenName });
-    const valueUsd = fieldFromSourceEnvelope(canonical.valueUsd, { previousValue: old.valueUsd, previousStatus: old.fieldStatus?.valueUsd });
-    const valuationUsd = fieldFromSourceEnvelope(canonical.valuation, { previousValue: old.valuationUsd, previousStatus: old.fieldStatus?.valuationUsd });
-    return {
-      ...old,
-      address: canonical.address,
-      implementation: canonical.token?.implementation?.value || old.implementation || null,
-      decimals: canonical.token?.decimals?.value ?? old.decimals ?? null,
-      totalSupply: totalSupply.value,
-      totalSupplyRaw: canonical.token?.totalSupplyRaw?.value ?? old.totalSupplyRaw ?? null,
-      totalSupplyExact: canonical.token?.totalSupplyExact?.value ?? old.totalSupplyExact ?? null,
-      symbol: symbol.value,
-      tokenName: tokenName.value,
-      valueUsd: valueUsd.value,
-      valueUsdExact: canonical.valueUsd?.valueExact ?? old.valueUsdExact ?? null,
-      valuationUsd: valuationUsd.value,
-      valuationUsdExact: canonical.valuation?.valueExact ?? old.valuationUsdExact ?? null,
-      valuationAnswerRaw: canonical.valuation?.answerRaw ?? canonical.valuation?.feed?.answerRaw ?? old.valuationAnswerRaw ?? null,
-      fieldStatus: { ...old.fieldStatus, totalSupply: totalSupply.status, symbol: symbol.status, tokenName: tokenName.status, valueUsd: valueUsd.status, valuationUsd: valuationUsd.status },
-      valuationFeed: canonical.valuation?.feed || null,
-      supplementalFeeds: canonical.supplementalFeeds || [],
-      valueStatus: canonical.valueUsd || null,
-      tokenStatus: canonical.token || null,
-      gatewayStatus: canonical.status,
-      gatewayBlock: snapshot.block,
-      valuationBasis: canonical.valuationBasis,
-      observedAt: snapshot.block?.timestamp || null,
-      supplyObservedAt: totalSupply.status.observedAt,
-      valuationObservedAt: valuationUsd.status.observedAt,
-      valueObservedAt: valueUsd.status.observedAt,
-    };
-  });
-  const adapterTvlUsd = previous.kpis?.rwaAdapterTvlUsd ?? null;
-  const kpis = summarizeTokenized(assets, adapterTvlUsd);
-  Object.assign(kpis, {
-    aggregateStatus: snapshot.aggregateStatus,
-    aggregateLabel: snapshot.aggregateLabel,
-    aggregateComplete: snapshot.aggregateEligibility?.complete === true,
-    eligibleAssetIds: snapshot.aggregateEligibility?.eligibleAssetIds || [],
-    excludedAssetIds: snapshot.aggregateEligibility?.excludedAssetIds || [],
-  });
-  const next = {
-    ...dashboard,
-    overview: { ...dashboard.overview, kpis: { ...dashboard.overview?.kpis, tokenizedAssetValueUsd: kpis.verifiedContractValueUsd } },
-    tokenizedAssets: {
-      ...previous,
-      generatedAt: snapshot.generatedAt,
-      kpis,
-      assets,
-      canonicalSnapshot: {
-        source: snapshot.source, schemaVersion: snapshot.schemaVersion, registryVersion: snapshot.registryVersion,
-        generatedAt: snapshot.generatedAt, block: snapshot.block, coverage: snapshot.coverage,
-        aggregateValueUsd: snapshot.aggregateValueUsd, aggregateValueUsdExact: snapshot.aggregateValueUsdExact,
-        aggregateStatus: snapshot.aggregateStatus, aggregateLabel: snapshot.aggregateLabel, aggregateEligibility: snapshot.aggregateEligibility,
-      },
-    },
-  };
-  const oldHealth = dashboard.quality?.sourceHealth || [];
-  next.quality = { ...dashboard.quality, sourceHealth: [...oldHealth.filter((row) => row.id !== 'avalanche-gateway-tokenized-assets'), { id: 'avalanche-gateway-tokenized-assets', ok: true, fetchedAt: snapshot.generatedAt, observedAt: snapshot.block?.timestamp || null, availability: snapshot.coverage?.availability || 'unavailable', error: null }] };
-  return next;
 }
 
 export function activityFreshness(activity, now = Date.now()) {
