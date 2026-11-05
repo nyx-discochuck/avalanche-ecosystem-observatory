@@ -138,6 +138,31 @@ function utcDateOffset(days) {
   return date.toISOString().slice(0, 10);
 }
 
+function useDialogFocus(onClose, active = true) {
+  const dialogRef = useRef(null);
+  const returnFocus = useRef(null);
+  const closeRef = useRef(onClose);
+  closeRef.current = onClose;
+  useEffect(() => {
+    if (!active) return undefined;
+    returnFocus.current = document.activeElement;
+    const dialog = dialogRef.current;
+    const focusable = () => [...(dialog?.querySelectorAll('button, a[href], input, select, [tabindex]:not([tabindex="-1"])') || [])].filter((node) => !node.disabled);
+    focusable()[0]?.focus();
+    const onKeyDown = (event) => {
+      if (event.key === 'Escape') { event.preventDefault(); closeRef.current(); return; }
+      if (event.key !== 'Tab') return;
+      const nodes = focusable(); if (!nodes.length) return;
+      const first = nodes[0]; const last = nodes.at(-1);
+      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+    };
+    dialog?.addEventListener('keydown', onKeyDown);
+    return () => { dialog?.removeEventListener('keydown', onKeyDown); returnFocus.current?.focus?.(); };
+  }, [active]);
+  return dialogRef;
+}
+
 function latest(rows = []) {
   return rows.at(-1) || {};
 }
@@ -231,50 +256,60 @@ function Logo() {
   );
 }
 
-function StatusStrip({ data, live }) {
+function unavailableNumber(value, formatter = integer) {
+  return finite(value) ? formatter.format(value) : 'Unavailable';
+}
+
+function StatusStrip({ data, live, liveReceipt }) {
   const status = data?.status;
   const network = live?.network;
   const market = live?.market;
-  const connected = Boolean(network);
+  const payloadStatus = String(liveReceipt.payloadStatus || live?.status || '').toLowerCase();
+  const connected = Boolean(network) && !liveReceipt.error && payloadStatus === 'live';
+  const partial = Boolean(network) && !liveReceipt.error && payloadStatus === 'degraded';
+  const retained = Boolean(network) && (Boolean(liveReceipt.error) || payloadStatus === 'stale');
   return (
     <div className="status-strip" role="status">
-      <span className={`pulse ${connected ? 'live' : status?.healthy ? 'healthy' : 'degraded'}`} />
-      <span className="status-primary">{connected ? 'LIVE C-CHAIN' : status?.healthy ? 'C-CHAIN SNAPSHOT' : 'SOURCE DEGRADED'}</span>
-      <span>BLOCK <strong>{integer.format(network?.blockNumber || status?.blockNumber || 0)}</strong></span>
+      <span className={`pulse ${connected ? 'live' : status?.healthy && !retained && !partial ? 'healthy' : 'degraded'}`} />
+      <span className="status-primary">{connected ? 'LIVE C-CHAIN' : partial ? 'C-CHAIN CURRENT · PARTIAL SOURCES' : retained ? 'STALE · RETAINED OBSERVATION' : status?.healthy ? 'C-CHAIN SNAPSHOT' : 'SOURCE DEGRADED'}</span>
+      <span>BLOCK <strong>{network?.blockNumber != null ? integer.format(network.blockNumber) : status?.blockNumber != null ? integer.format(status.blockNumber) : '—'}</strong></span>
       <span>AVAX <strong>{formatValue(market?.avaxPriceUsd ?? status?.avaxPriceUsd)}</strong></span>
       <span>BASE <strong>{formatValue(network?.baseFeeGwei ?? status?.baseFeeGwei, 'Gwei')}</strong></span>
       <span>TPS <strong>{finite(network?.tps) ? decimal.format(network.tps) : '—'}</strong></span>
       <span>SCOPED CHECKS <strong>{data?.quality?.verification?.summary?.pass || 0} PASSED</strong></span>
-      <span className="status-right">{connected ? 'HEAD AGE' : 'INDEXED THROUGH'} <strong>{connected ? `${decimal.format(network.blockAgeSeconds)}s` : data?.metadata?.latestCompleteDate || 'Unavailable'}</strong></span>
+      <span className="status-right">{network ? 'RECEIPT AGE' : 'INDEXED THROUGH'} <strong>{network ? `${Math.max(0, Math.floor((liveReceipt.now - liveReceipt.lastSuccessAt) / 1000))}s` : data?.metadata?.latestCompleteDate || 'Unavailable'}</strong></span>
     </div>
   );
 }
 
-function Header({ page, setPage, data, live, onSearch }) {
+function Header({ page, setPage, data, live, liveReceipt, onSearch }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   return (
     <>
-      <StatusStrip data={data} live={live} />
+      <StatusStrip data={data} live={live} liveReceipt={liveReceipt} />
       <header className="header">
         <Logo />
         <nav className="primary-nav" aria-label="Primary">
           <a href="/avalanche/">Avalanche</a>
         </nav>
         <div className="header-actions">
+          <label className="section-chooser"><span>Section</span><select aria-label="Choose dashboard section" value={page} onChange={(event) => setPage(event.target.value)}>{PAGES.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}</select></label>
           <button className="search-button" onClick={onSearch} aria-label="Search observatory"><Search size={16} /> <span>Search observatory</span><kbd>/</kbd></button>
           <a className="icon-button" href="https://snowtrace.io/" target="_blank" rel="noreferrer" title="Open Snowtrace"><ExternalLink size={17} /></a>
-          <button className="icon-button mobile-menu-button" onClick={() => setMobileOpen((value) => !value)} aria-label="Toggle menu" aria-expanded={mobileOpen} aria-controls="mobile-primary-menu"><Menu size={19} /></button>
+          <button className="mobile-menu-button" onClick={() => setMobileOpen((value) => !value)} aria-label="Toggle sections menu" aria-expanded={mobileOpen} aria-controls="mobile-primary-menu"><Menu size={17} /><span>Sections</span></button>
         </div>
       </header>
       {mobileOpen && (
         <nav id="mobile-primary-menu" className="mobile-menu" aria-label="Mobile primary">
           <a href="/avalanche/">Avalanche</a>
-          <button onClick={() => { onSearch(); setMobileOpen(false); }}><Search size={16} /> Search</button>
+          <strong>All dashboard sections</strong>
+          {PAGES.map((item) => <button key={item.id} aria-current={page === item.id ? 'page' : undefined} onClick={() => { setPage(item.id); setMobileOpen(false); }}><item.icon size={16} /> {item.label}</button>)}
+          <button onClick={() => { onSearch(); setMobileOpen(false); }}><Search size={16} /> Search dashboard data</button>
         </nav>
       )}
       <nav className="section-nav" aria-label="Dashboard sections">
         {PAGES.map((item) => (
-          <button key={item.id} className={page === item.id ? 'active' : ''} onClick={() => setPage(item.id)}>
+          <button key={item.id} className={page === item.id ? 'active' : ''} aria-current={page === item.id ? 'page' : undefined} onClick={() => setPage(item.id)}>
             <item.icon size={15} /> {item.label}
           </button>
         ))}
@@ -283,36 +318,38 @@ function Header({ page, setPage, data, live, onSearch }) {
   );
 }
 
-function LivePulse({ live, snapshot }) {
+function LivePulse({ live, snapshot, liveReceipt }) {
   const network = live?.network;
   const market = live?.market;
   const degradedSources = live?.sources?.filter((source) => !source.ok) || [];
   if (!network) {
     return (
-      <section className="live-pulse unavailable" aria-label="Live network pulse">
-        <div className="live-pulse-heading">
-          <div><span className="live-label"><Radio size={13} /> LIVE PULSE WARMING</span><strong>Connecting to Avalanche C-Chain</strong></div>
-          <span>Audited snapshot remains available</span>
-        </div>
-      </section>
+      <details className="operational-details unavailable" aria-label="Live network pulse">
+        <summary><span><Radio size={13} /> Live network pulse unavailable</span><small>Audited daily snapshot remains available</small><ChevronDown size={14} /></summary>
+        <p>No live C-Chain response was available for this preview. No connection or freshness claim is made; snapshot values and their source disclosures remain unchanged.</p>
+      </details>
     );
   }
+  const payloadStatus = String(liveReceipt.payloadStatus || live.status || '').toLowerCase();
+  const stale = Boolean(liveReceipt.error) || payloadStatus === 'stale';
+  const partial = !stale && payloadStatus === 'degraded';
+  const receiptAge = Math.max(0, Math.floor((liveReceipt.now - liveReceipt.lastSuccessAt) / 1000));
   const metrics = [
     { label: 'Rolling throughput', value: formatValue(network.tps, 'TPS'), icon: Activity },
     { label: 'Average block time', value: finite(network.blockTimeSeconds) ? `${decimal.format(network.blockTimeSeconds)}s` : 'Unavailable', icon: Clock3 },
-    { label: `Transactions · ${network.sampleBlocks} blocks`, value: integer.format(network.transactions || 0), icon: Blocks },
+    { label: `Transactions · ${network.sampleBlocks ?? 'unavailable'} blocks`, value: unavailableNumber(network.transactions), icon: Blocks },
     { label: 'Gas utilization', value: formatValue(network.gasUtilizationPct, 'percent'), icon: Gauge },
     { label: 'Latest base fee', value: formatValue(network.baseFeeGwei, 'Gwei'), icon: Fuel },
     { label: 'AVAX spot', value: formatValue(market?.avaxPriceUsd ?? snapshot.status.avaxPriceUsd), icon: Zap },
   ];
   return (
-    <section className={`live-pulse ${live.status === 'live' ? '' : 'degraded'}`} aria-label="Live network pulse">
+    <section className={`live-pulse ${live.status === 'live' && !stale ? '' : 'degraded'}`} aria-label="Live network pulse">
       <div className="live-pulse-heading">
         <div>
-          <span className="live-label"><span className="pulse live" /><Radio size={13} /> LIVE NETWORK PULSE</span>
-          <strong>Block {integer.format(network.blockNumber)} · {decimal.format(network.blockAgeSeconds)}s behind head</strong>
+          <span className="live-label"><span className={`pulse ${stale || partial ? 'degraded' : 'live'}`} /><Radio size={13} /> {stale ? 'STALE · RETAINED OBSERVATION' : partial ? 'CURRENT C-CHAIN · PARTIAL SOURCES' : 'LIVE NETWORK PULSE'}</span>
+          <strong>Block {unavailableNumber(network.blockNumber)} · observed head age {finite(network.blockAgeSeconds) ? `${decimal.format(network.blockAgeSeconds)}s` : 'unavailable'} · received {receiptAge}s ago</strong>
         </div>
-        <span>{network.sampleBlocks}-block rolling window · {live.cadenceSeconds}s source cache · auto-refreshing</span>
+        <span>{network.sampleBlocks ?? 'Unavailable'}-block rolling window · {live.cadenceSeconds ?? 'unknown'}s source cache · {stale ? 'values retained after a failed or stale refresh' : partial ? 'network current; one or more auxiliary sources degraded' : 'last refresh succeeded'}</span>
       </div>
       <div className="live-metric-grid">
         {metrics.map((metric) => (
@@ -323,10 +360,10 @@ function LivePulse({ live, snapshot }) {
         ))}
       </div>
       <div className="block-tape" aria-label="Recent Avalanche blocks">
-        {network.blocks.slice(0, 8).map((block) => (
-          <a key={block.number} href={`https://snowscan.xyz/block/${block.number}`} target="_blank" rel="noreferrer">
-            <span>#{integer.format(block.number)}</span>
-            <strong>{integer.format(block.txCount)} tx</strong>
+        {(Array.isArray(network.blocks) ? network.blocks : []).slice(0, 8).map((block, index) => (
+          <a key={finite(block?.number) ? block.number : `unavailable-${index}`} href={finite(block?.number) ? `https://snowscan.xyz/block/${block.number}` : undefined} target={finite(block?.number) ? '_blank' : undefined} rel={finite(block?.number) ? 'noreferrer' : undefined} aria-disabled={!finite(block?.number)}>
+            <span>#{finite(block?.number) ? integer.format(block.number) : 'Unavailable'}</span>
+            <strong>{finite(block?.txCount) ? integer.format(block.txCount) : 'Unavailable'} tx</strong>
             <small>{finite(block.gasUtilizationPct) ? `${decimal.format(block.gasUtilizationPct)}% gas` : 'gas n/a'}</small>
           </a>
         ))}
@@ -339,17 +376,28 @@ function LivePulse({ live, snapshot }) {
           {degradedSources.length ? `${degradedSources.length} live source${degradedSources.length === 1 ? '' : 's'} degraded` : 'RPC · CoinPaprika · DeFiLlama'}
         </span>
       </div>
-      <p className="live-disclosure">Live pulse values are short-window operational observations. Audited daily charts and KPIs below remain complete-day snapshots with their original definitions.</p>
+      <p className="live-disclosure">Live pulse values are short-window operational observations{stale ? ' retained after a failed or explicitly stale refresh' : partial ? '; C-Chain is current while the named auxiliary sources are degraded' : ''}. Audited daily KPIs above and historical charts below remain complete-day snapshots with their original definitions.</p>
     </section>
   );
 }
 
 function RadarInfrastructure({ radar }) {
-  if (!radar) {
+  if (!radar || !radar.available) {
+    const status = radar?.posture || radar?.status || (radar ? 'unavailable' : 'waiting');
+    const reason = radar?.reason || radar?.error || radar?.message;
+    const consoleUrl = radar?.consoleUrl || radar?.url || '/avalanche/avax-radar/';
     return (
-      <section className="radar-infrastructure warming" aria-label="AVAX Radar infrastructure">
-        <div><Radio size={15} /><span>AVAX RADAR</span><strong>Connecting to the unified data plane</strong></div>
-      </section>
+      <details className="operational-details unavailable" aria-label="AVAX Radar infrastructure">
+        <summary><span><Radio size={13} /> AVAX Radar unavailable</span><small>{reason || `Operational status: ${status}`}</small><ChevronDown size={14} /></summary>
+        <p>Radar is not reporting an available data plane. Historical dashboard values are not rewritten by this operational status.</p>
+        <dl className="operational-null-grid">
+          <div><dt>STATUS</dt><dd>{status}</dd></div><div><dt>INDEXED BLOCK</dt><dd>{radar?.lastSyncedBlock == null ? '—' : integer.format(radar.lastSyncedBlock)}</dd></div>
+          <div><dt>HEAD LAG</dt><dd>{radar?.lagBlocks == null ? '—' : `${integer.format(radar.lagBlocks)} blocks`}</dd></div><div><dt>SYNC AGE</dt><dd>{radar?.ageSeconds == null ? '—' : `${integer.format(radar.ageSeconds)}s`}</dd></div>
+          <div><dt>RPC POOL</dt><dd>{radar?.availableRpcCount == null ? '—' : `${radar.availableRpcCount}/${radar.totalRpcCount ?? '—'}`}</dd></div><div><dt>RECENT SIGNALS</dt><dd>{radar?.alerts?.length == null ? '—' : integer.format(radar.alerts.length)}</dd></div>
+        </dl>
+        {reason && <p><strong>Reported reason:</strong> {String(reason)}</p>}
+        <a href={consoleUrl} target="_blank" rel="noreferrer">Open Radar console <ExternalLink size={12} /></a>
+      </details>
     );
   }
   const activity = [...(radar.alerts || [])]
@@ -725,7 +773,7 @@ function StakingPage({ live }) {
   </>;
 }
 
-function OverviewPage({ data, live, radar, range, custom, onInfo, setPage }) {
+function OverviewPage({ data, live, liveReceipt, radar, range, custom, setRange, setCustom, onInfo, setPage }) {
   const overview = data.overview;
   const kpis = overview.kpis;
   const protocolSeries = Object.keys(latest(overview.protocolTvl.protocolHistory)).filter((key) => key !== 'date').map((key) => ({ key, name: key.replaceAll('-', ' ') }));
@@ -739,15 +787,17 @@ function OverviewPage({ data, live, radar, range, custom, onInfo, setPage }) {
   return (
     <>
       <PageTitle title="Ecosystem Overview" description="Capital, liquidity, trading, tokenization, and deployment activity across Avalanche C-Chain." data={data} />
-      <LivePulse live={live} snapshot={data} />
-      <RadarInfrastructure radar={radar} />
       <div className="kpi-grid four">
         <Kpi label="AVAX Market Cap" value={kpis.avaxMarketCapUsd} note={`${decimal.format(data.status.avaxChange24hPct)}% over 24h`} metric="avax_market_cap" onInfo={onInfo} />
         <Kpi label="Stablecoin Market Cap" value={kpis.stablecoinMarketCapUsd} metric="stablecoin_market_cap" onInfo={onInfo} />
         <Kpi label="Verified Tokenized Value" value={kpis.tokenizedAssetValueUsd} metric="tokenized_asset_value" onInfo={onInfo} />
         <Kpi label="Protocol TVL" value={kpis.protocolTvlUsd} metric="protocol_tvl" onInfo={onInfo} />
       </div>
+      <details className="scope-disclosure"><summary><CircleAlert size={15} /> Scope and coverage disclosures <ChevronDown size={14} /></summary><p>{data.quality.verification.policy.scopeDisclosure}</p>{data.metadata.warnings?.length > 0 && <ul>{[...new Set(data.metadata.warnings)].map((warning) => <li key={warning}>{warning}</li>)}</ul>}</details>
+      <LivePulse live={live} snapshot={data} liveReceipt={liveReceipt} />
+      <RadarInfrastructure radar={radar} />
       <VerificationPreview data={data} setPage={setPage} />
+      <Timeframe range={range} setRange={setRange} custom={custom} setCustom={setCustom} />
       <ChartPanel title="Protocol TVL Over Time" subtitle="DeFiLlama chain TVL, excluding CEX balances." data={overview.protocolTvl.totalHistory} series={[{ key: 'total', name: 'Avalanche TVL' }]} range={range} custom={custom} metric="protocol_tvl" onInfo={onInfo} />
       <div className="two-column">
         <ChartPanel title="Protocol-Adapter TVL Over Time" subtitle="Non-additive adapter series; wrappers, allocators, and underlying protocols can overlap." data={overview.protocolTvl.protocolHistory} series={protocolSeries} range={range} custom={custom} type="line" metric="protocol_adapter_exposure" onInfo={onInfo} />
@@ -794,13 +844,14 @@ function OverviewPage({ data, live, radar, range, custom, onInfo, setPage }) {
   );
 }
 
-function BlockspacePage({ data, live, range, custom, onInfo }) {
+function BlockspacePage({ data, live, liveReceipt, range, custom, setRange, setCustom, onInfo }) {
   const rows = data.blockspace.daily;
   const day = latest(rows);
   return (
     <>
       <PageTitle title="Blockspace" description="Verified block and transaction statistics derived from local C-Chain parquet archives." data={data} />
-      <LivePulse live={live} snapshot={data} />
+      <LivePulse live={live} snapshot={data} liveReceipt={liveReceipt} />
+      <Timeframe range={range} setRange={setRange} custom={custom} setCustom={setCustom} />
       <div className="kpi-grid four">
         <Kpi label="Average Transaction Cost" value={day.average_fee_avax} unit="AVAX" change={previousChange(rows, 'average_fee_avax')} icon={Fuel} metric="average_transaction_cost" onInfo={onInfo} />
         <Kpi label="Average Gas Price" value={day.average_gas_price_gwei} unit="Gwei" change={previousChange(rows, 'average_gas_price_gwei')} metric="average_gas_price" onInfo={onInfo} />
@@ -879,13 +930,14 @@ function SupplyLedger({ supply, onInfo }) {
   );
 }
 
-function EconomicsPage({ data, live, range, custom, onInfo }) {
+function EconomicsPage({ data, live, range, custom, setRange, setCustom, onInfo }) {
   const economics = data.economics;
   const day = latest(economics.feeHistory);
   const supply = live?.economics;
   return (
     <>
       <PageTitle title="Economics" description="Primary Network tokenomics and C-Chain fee burn, using Avalanche-native accounting." data={data} />
+      <Timeframe range={range} setRange={setRange} custom={custom} setCustom={setCustom} />
       <div className="kpi-grid four">
         <Kpi label="30-day covered C-Chain burn" value={economics.kpis.coveredFeesBurnedAvax} unit="AVAX" note="Coverage window; not all-time burn" metric="transaction_fees_burned" onInfo={onInfo} />
         <Kpi label="Current-Price Fee Value" value={economics.kpis.coveredFeesBurnedUsdCurrentPrice} note="Uses current AVAX price" metric="transaction_fees_burned" onInfo={onInfo} />
@@ -907,13 +959,14 @@ function EconomicsPage({ data, live, range, custom, onInfo }) {
   );
 }
 
-function SpotPage({ data, range, custom, onInfo }) {
+function SpotPage({ data, range, custom, setRange, setCustom, onInfo }) {
   const spot = data.spot;
   const series = rankDexLiquiditySourceKeys(rangeRows(spot.breakdownHistory, range, custom))
     .map((key) => ({ key, name: key.replaceAll('-', ' ') }));
   return (
     <>
       <PageTitle title="Spot Trading" description="Liquidity, protocol volume, and verified architecture coverage for Avalanche spot markets." data={data} />
+      <Timeframe range={range} setRange={setRange} custom={custom} setCustom={setCustom} />
       <div className="kpi-grid four">
         <Kpi label="Spot DEX adapter TVL proxy" value={spot.ammLiquidityUsd} metric="amm_liquidity" onInfo={onInfo} />
         <Kpi label="DEX Volume · Latest Complete Day" value={spot.volume24hUsd} note="DeFiLlama completed UTC bucket" metric="dex_volume" onInfo={onInfo} />
@@ -984,7 +1037,7 @@ function TokenizedValuationEvidence({ row }) {
   </span>;
 }
 
-function TokenizedPage({ data, range, custom, onInfo }) {
+function TokenizedPage({ data, range, custom, setRange, setCustom, onInfo }) {
   const tokenized = data.tokenizedAssets;
   const venueLandscape = tokenized.venueLandscape;
   const [assetId, setAssetId] = useState(tokenized.assets[0]?.id || '');
@@ -995,6 +1048,7 @@ function TokenizedPage({ data, range, custom, onInfo }) {
   return (
     <>
       <PageTitle title="Tokenized Assets" description="Verified native Avalanche RWA issuances, separated from ordinary stablecoins and bridged representations." data={data} />
+      <Timeframe range={range} setRange={setRange} custom={custom} setCustom={setCustom} />
       <div className="kpi-grid four">
         <Kpi label="Verified Assets" value={tokenized.kpis.verifiedTokenContracts} unit="contracts" metric="tokenized_asset_count" onInfo={onInfo} />
         <Kpi label="Verified Contract Value" value={tokenized.kpis.verifiedContractValueUsd} note={`${tokenized.kpis.valueCoverage || `${tokenized.kpis.valuedAssets}/${tokenized.kpis.trackedAssets}`} valued · ${tokenized.kpis.valueAvailability || 'partial'}`} metric="tokenized_asset_value" onInfo={onInfo} />
@@ -1072,7 +1126,7 @@ function TokenizedPage({ data, range, custom, onInfo }) {
   );
 }
 
-function LendingPage({ data, range, custom, onInfo }) {
+function LendingPage({ data, range, custom, setRange, setCustom, onInfo }) {
   const lending = data.lending;
   const vaultAvailability = lending.vaultAvailability || 'unavailable';
   const hasVaultInventory = vaultAvailability !== 'unavailable';
@@ -1106,6 +1160,7 @@ function LendingPage({ data, range, custom, onInfo }) {
   return (
     <>
       <PageTitle title="Lending" description="Source-backed lending balances, rates, coverage, and dated liquidation observations on Avalanche." data={data} />
+      <Timeframe range={range} setRange={setRange} custom={custom} setCustom={setCustom} />
       <div className="kpi-grid four">
         <Kpi label="Tracked Gross Supply" value={lending.kpis.totalSuppliedUsd} note="Eligible priced claims; coverage below, not chain-wide TVL" metric="lending_market_size" onInfo={onInfo} />
         <Kpi label="Tracked Borrowed" value={lending.kpis.totalBorrowedUsd} metric="lending_borrowed" onInfo={onInfo} />
@@ -1328,11 +1383,16 @@ function CoverageNote({ title, detail }) {
   return <aside className="coverage-note"><CircleAlert size={17} /><div><strong>{title}</strong><p>{detail}</p></div></aside>;
 }
 
+function SharedScopeDisclosure({ data }) {
+  const warnings = [...new Set(data.metadata.warnings || [])];
+  return <details className="scope-disclosure compact"><summary><CircleAlert size={15} /> Snapshot scope and global metadata warnings <ChevronDown size={14} /></summary><p>{data.quality.verification.policy.scopeDisclosure}</p>{warnings.length > 0 && <><p>These warnings apply to the shared snapshot metadata; no page-specific attribution is implied.</p><ul>{warnings.map((warning) => <li key={warning}>{warning}</li>)}</ul></>}</details>;
+}
+
 function PageTitle({ title, description, data }) {
   return (
     <div className="page-title">
       <div><span className="eyebrow">AVALANCHE C-CHAIN</span><h1>{title}</h1><p>{description}</p></div>
-      <div className="freshness"><span className={`pulse ${data.metadata.freshness === 'healthy' ? 'healthy' : 'degraded'}`} /><div><strong>{data.metadata.freshness === 'healthy' ? 'Audited snapshot current' : 'Snapshot coverage degraded'}</strong><span>Snapshot {new Date(data.generatedAt).toLocaleString('en-US', { timeZone: 'UTC', dateStyle: 'medium', timeStyle: 'short' })} UTC</span></div></div>
+      <div className="freshness"><span className={`pulse ${data.metadata.freshness === 'healthy' ? 'healthy' : 'degraded'}`} /><div><strong>{data.metadata.freshness === 'healthy' ? 'Daily snapshot available' : 'Snapshot coverage degraded'}</strong><span>Generated {new Date(data.generatedAt).toLocaleString('en-US', { timeZone: 'UTC', dateStyle: 'medium', timeStyle: 'short' })} UTC · data through {data.metadata.latestCompleteDate || 'not supplied'}</span></div></div>
     </div>
   );
 }
@@ -1340,15 +1400,16 @@ function PageTitle({ title, description, data }) {
 function Timeframe({ range, setRange, custom, setCustom }) {
   const [calendar, setCalendar] = useState(false);
   const [draft, setDraft] = useState(custom);
+  const dialogRef = useDialogFocus(() => setCalendar(false), calendar);
   return (
     <>
-      <div className="timeframe" role="group" aria-label="Global timeframe">
-        {['7D', '14D', '30D', 'ALL'].map((item) => <button key={item} className={range === item ? 'active' : ''} onClick={() => setRange(item)}>{item}</button>)}
-        <button className={range === 'CUSTOM' ? 'active' : ''} onClick={() => { setDraft(custom); setCalendar(true); }} aria-label="Custom date range"><CalendarDays size={15} /><span>{range === 'CUSTOM' ? `${custom.start} – ${custom.end}` : 'Custom'}</span></button>
-      </div>
+      <section className="history-controls" aria-label="Historical chart range"><div><span>HISTORICAL CHARTS</span><strong>Date range</strong><small>Applies only to dated charts below; headline KPIs keep their stated observation windows.</small></div><div className="timeframe" role="group" aria-label="Historical chart timeframe">
+        {['7D', '14D', '30D', 'ALL'].map((item) => <button key={item} className={range === item ? 'active' : ''} aria-pressed={range === item} onClick={() => setRange(item)}>{item}</button>)}
+        <button className={range === 'CUSTOM' ? 'active' : ''} aria-pressed={range === 'CUSTOM'} onClick={() => { setDraft(custom); setCalendar(true); }} aria-label="Custom date range"><CalendarDays size={15} /><span>{range === 'CUSTOM' ? `${custom.start} – ${custom.end}` : 'Custom'}</span></button>
+      </div></section>
       {calendar && (
         <div className="modal-backdrop" onMouseDown={(event) => event.target === event.currentTarget && setCalendar(false)}>
-          <div className="calendar-dialog" role="dialog" aria-modal="true" aria-label="Custom date range">
+          <div ref={dialogRef} className="calendar-dialog" role="dialog" aria-modal="true" aria-label="Custom date range">
             <div className="dialog-title"><div><span>GLOBAL TIMEFRAME</span><h2>Custom date range</h2></div><button className="icon-button" onClick={() => setCalendar(false)} aria-label="Close custom date range"><X size={18} /></button></div>
             <label>Start date<input type="date" value={draft.start} max={draft.end} onChange={(event) => setDraft({ ...draft, start: event.target.value })} /></label>
             <label>End date<input type="date" value={draft.end} min={draft.start} onChange={(event) => setDraft({ ...draft, end: event.target.value })} /></label>
@@ -1361,6 +1422,7 @@ function Timeframe({ range, setRange, custom, setCustom }) {
 }
 
 function MethodologyDialog({ id, metrics, onClose }) {
+  const dialogRef = useDialogFocus(onClose);
   const metric = metrics.find((item) => item.id === id);
   if (!metric) return null;
   const entries = [
@@ -1375,7 +1437,7 @@ function MethodologyDialog({ id, metrics, onClose }) {
   ];
   return (
     <div className="modal-backdrop" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
-      <div className="method-dialog" role="dialog" aria-modal="true" aria-labelledby="method-title">
+      <div ref={dialogRef} className="method-dialog" role="dialog" aria-modal="true" aria-labelledby="method-title">
         <div className="dialog-title"><div><span>METHODOLOGY</span><h2 id="method-title">{metric.label}</h2></div><button className="icon-button" onClick={onClose} aria-label="Close methodology"><X size={18} /></button></div>
         <dl>{entries.map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value || 'Not available'}</dd></div>)}</dl>
       </div>
@@ -1386,6 +1448,7 @@ function MethodologyDialog({ id, metrics, onClose }) {
 function SearchDialog({ data, onClose, setPage }) {
   const [query, setQuery] = useState('');
   const input = useRef(null);
+  const dialogRef = useDialogFocus(onClose);
   useEffect(() => input.current?.focus(), []);
   const items = useMemo(() => [
     ...PAGES.map((page) => ({ type: 'Page', title: page.label, detail: 'Dashboard section', page: page.id })),
@@ -1396,14 +1459,10 @@ function SearchDialog({ data, onClose, setPage }) {
   const results = query.length > 1 ? items.filter((item) => `${item.title} ${item.detail}`.toLowerCase().includes(query.toLowerCase())).slice(0, 20) : items.slice(0, 6);
   return (
     <div className="search-backdrop" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
-      <div className="search-dialog" role="dialog" aria-modal="true" aria-label="Search observatory">
+      <div ref={dialogRef} className="search-dialog" role="dialog" aria-modal="true" aria-label="Search dashboard data">
         <div className="search-input"><Search size={20} /><input ref={input} value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search protocols, assets, contracts, and pages" aria-label="Search observatory" /><button onClick={onClose} aria-label="Close search"><X size={18} /></button></div>
         <div className="search-results">
-          {results.map((item, index) => (
-            <button key={`${item.type}-${item.title}-${index}`} onClick={() => { setPage(item.page); onClose(); }}>
-              <span>{item.type}</span><div><strong>{item.title}</strong><small>{item.detail}</small></div>{item.href && <a href={item.href} target="_blank" rel="noreferrer" onClick={(event) => event.stopPropagation()}><ExternalLink size={14} /></a>}
-            </button>
-          ))}
+          {results.map((item, index) => <div className="search-result" key={`${item.type}-${item.title}-${index}`}><button onClick={() => { setPage(item.page); onClose(); }}><span>{item.type}</span><div><strong>{item.title}</strong><small>{item.detail}</small></div></button>{item.href && <a href={item.href} aria-label={`Open external source for ${item.title}`} target="_blank" rel="noreferrer"><ExternalLink size={14} /></a>}</div>)}
           {!results.length && <EmptyState title="No matching records" detail="Try a protocol, symbol, contract address, or dashboard section." />}
         </div>
       </div>
@@ -1425,6 +1484,9 @@ function App() {
   const [radar, setRadar] = useState(null);
   const [error, setError] = useState('');
   const [liveError, setLiveError] = useState('');
+  const [liveLastSuccessAt, setLiveLastSuccessAt] = useState(null);
+  const [livePayloadStatus, setLivePayloadStatus] = useState('');
+  const [now, setNow] = useState(Date.now());
   const [method, setMethod] = useState(null);
   const [search, setSearch] = useState(false);
 
@@ -1447,6 +1509,11 @@ function App() {
     const item = PAGES.find((candidate) => candidate.id === page);
     document.title = page === 'overview' ? 'Avalanche Ecosystem Analytics & DeFi Dashboard' : `${item?.label || 'Avalanche'} | Avalanche Ecosystem Observatory`;
   }, [page]);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(Date.now()), 1000);
+    return () => window.clearInterval(timer);
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -1507,10 +1574,15 @@ function App() {
       try {
         const response = await fetch(`${BASE}api/live`, { cache: 'no-store' });
         const payload = await response.json();
-        if (!response.ok && !payload.network) throw new Error(payload.detail || payload.error || `HTTP ${response.status}`);
+        if (!response.ok) throw new Error(payload.detail || payload.error || `HTTP ${response.status}`);
+        if (!payload.network) throw new Error(payload.detail || payload.error || 'Live response omitted network data');
+        const payloadStatus = String(payload.status || '').toLowerCase();
+        if (!['live', 'degraded', 'stale'].includes(payloadStatus)) throw new Error(`Unsupported live payload status: ${payload.status ?? 'missing'}`);
         if (active) {
           setLive(payload);
           setLiveError('');
+          setLiveLastSuccessAt(Date.now());
+          setLivePayloadStatus(payloadStatus);
         }
       } catch (reason) {
         if (active) setLiveError(reason.message);
@@ -1547,7 +1619,8 @@ function App() {
   if (error) return <main className="fatal-error"><CircleAlert size={30} /><h1>Dashboard snapshot unavailable</h1><p>{error}</p><button onClick={() => location.reload()}>Retry</button></main>;
   if (!data) return <Loading />;
 
-  const common = { data, live, radar, range, custom, onInfo: setMethod, setPage };
+  const liveReceipt = { error: liveError, lastSuccessAt: liveLastSuccessAt, payloadStatus: livePayloadStatus, now };
+  const common = { data, live, liveReceipt, radar, range, custom, setRange, setCustom, onInfo: setMethod, setPage };
   const pages = {
     overview: <OverviewPage {...common} />,
     beginners: <BeginnersPage {...common} />,
@@ -1565,14 +1638,13 @@ function App() {
 
   return (
     <div className="app">
-      <Header page={page} setPage={setPage} data={data} live={live} onSearch={() => setSearch(true)} />
+      <Header page={page} setPage={setPage} data={data} live={live} liveReceipt={liveReceipt} onSearch={() => setSearch(true)} />
       <main className="dashboard-main">
-        {data.metadata.warnings?.length > 0 && <details className="quality-banner"><summary><CircleAlert size={16} /> {data.metadata.warnings.length} disclosed coverage limitations <ChevronDown size={14} /></summary><ul>{data.metadata.warnings.map((warning) => <li key={warning}>{warning}</li>)}</ul></details>}
-        {liveError && !live && <div className="live-error" role="status"><CircleAlert size={14} /> Live pulse unavailable; audited snapshot remains active.</div>}
+        {liveError && page !== 'overview' && <div className="live-error" role="status"><CircleAlert size={14} /> {live ? 'Live refresh failed; last-known live values are stale. Audited snapshot remains active.' : 'Live pulse unavailable; audited snapshot remains active.'}</div>}
+        {page !== 'overview' && <SharedScopeDisclosure data={data} />}
         {pages[page]}
       </main>
       <footer><Logo /><span>Auditable Avalanche C-Chain analytics</span><a href={`${BASE}api/catalog`}>Metric catalog <ExternalLink size={12} /></a><span>Schema {data.schema}</span></footer>
-      <Timeframe range={range} setRange={setRange} custom={custom} setCustom={setCustom} />
       {method && <MethodologyDialog id={method} metrics={data.quality.metricCatalog.metrics} onClose={() => setMethod(null)} />}
       {search && <SearchDialog data={data} setPage={setPage} onClose={() => setSearch(false)} />}
     </div>

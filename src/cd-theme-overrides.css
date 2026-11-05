@@ -41,6 +41,12 @@
 :root[data-cd-theme="light"] .supply-net > strong,
 :root[data-cd-theme="light"] .supply-equation .supply-total strong { color: var(--cd-text); }
 :root[data-cd-theme="light"] .live-market-rail { background: rgba(255,255,255,.24); }
+:root[data-cd-theme="light"] .live-label { color: #a3151d; }
+:root[data-cd-theme="light"] .live-pulse-heading > span,
+:root[data-cd-theme="light"] .live-metric-grid span,
+:root[data-cd-theme="light"] .live-market-rail span,
+:root[data-cd-theme="light"] .live-disclosure { color: #555f69; }
+:root[data-cd-theme="light"] .live-market-rail strong { color: #24282d; }
 :root[data-cd-theme="light"] .kpi.unavailable::after { background: #9ba2aa; }
 :root[data-cd-theme="light"] .source-link { border-color: var(--cd-border); color: var(--cd-muted); }
 :root[data-cd-theme="light"] .source-link:hover { background: var(--cd-surface-2); color: var(--cd-text); }
@@ -146,13 +152,15 @@
 }
 :root[data-cd-theme="light"] .coverage-note strong { color: var(--cd-text); }
 :root[data-cd-theme="light"] .timeframe {
-  background: color-mix(in srgb, var(--cd-surface-1) 96%, transparent);
+  background: #fbf9f3;
   border-color: var(--cd-border-strong);
   box-shadow: var(--cd-shadow);
 }
-:root[data-cd-theme="light"] .timeframe button { color: var(--cd-muted); }
+:root[data-cd-theme="light"] .timeframe button { color: #3f4851; }
 :root[data-cd-theme="light"] .timeframe button:hover { background: var(--cd-surface-2); color: var(--cd-text); }
-:root[data-cd-theme="light"] .timeframe button.active { background: var(--red); color: #fff !important; }
+:root[data-cd-theme="light"] .timeframe button.active { background: #a3151d; color: #fff !important; }
+:root[data-cd-theme="light"] .history-controls { background: var(--cd-surface-1); border-color: var(--cd-border-strong); color: var(--cd-text); }
+:root[data-cd-theme="light"] .history-controls small { color: var(--cd-muted); }
 
 :root[data-cd-theme="light"] .method-dialog dl div,
 :root[data-cd-theme="light"] .dialog-title,
@@ -164,7 +172,70 @@
 }
 :root[data-cd-theme="light"] .dialog-actions button.primary { background: var(--red); color: #fff !important; }
 :root[data-cd-theme="light"] .search-input input,
-:root[data-cd-theme="light"] .search-results > button { color: var(--cd-text); }
+:root[data-cd-theme="light"] .search-result > button { color: var(--cd-text); }
 :root[data-cd-theme="light"] .search-input button,
-:root[data-cd-theme="light"] .search-results > button small { color: var(--cd-muted); }
-:root[data-cd-theme="light"] .search-results > button:hover { background: var(--cd-surface-2); }
+:root[data-cd-theme="light"] .search-result > button small { color: var(--cd-muted); }
+:root[data-cd-theme="light"] .search-result:hover,
+:root[data-cd-theme="light"] .search-result:focus-within { background: var(--cd-surface-2); }
+:root[data-cd-theme="light"] .search-result > button > span { color: #9f1119; }
+
+/* App-local light-mode completion for legacy surfaces with literal dark colors. */
+:root[data-cd-theme="light"] body,
+:root[data-cd-theme="light"] .dashboard-main { background-color: var(--cd-bg); color: var(--cd-text); }
+:root[data-cd-theme="light"] .scope-disclosure,
+:root[data-cd-theme="light"] .operational-details,
+:root[data-cd-theme="light"] .radar-infrastructure,
+:root[data-cd-theme="light"] .supply-ledger,
+:root[data-cd-theme="light"] .reading-surface,
+:root[data-cd-theme="light"] .definition-grid article,
+:root[data-cd-theme="light"] .expert-tape div,
+:root[data-cd-theme="light"] .launch-card,
+:root[data-cd-theme="light"] .event-card,
+:root[data-cd-theme="light"] .unlock-event-grid,
+:root[data-cd-theme="light"] .empty-intelligence,
+:root[data-cd-theme="light"] .calculator-card,
+:root[data-cd-theme="light"] .parameter-grid article,
+:root[data-cd-theme="light"] .source-rail,
+:root[data-cd-theme="light"] .verification-ledger { background: var(--cd-surface-1); border-color: var(--cd-border); color: var(--cd-text); }
+:root[data-cd-theme="light"] .expert-tape,
+:root[data-cd-theme="light"] .unlock-event-grid { background: var(--cd-border); border-color: var(--cd-border); }
+:root[data-cd-theme="light"] .scope-disclosure,
+:root[data-cd-theme="light"] .operational-details,
+:root[data-cd-theme="light"] .prose-surface,
+:root[data-cd-theme="light"] .prose-surface p,
+:root[data-cd-theme="light"] .launch-card p,
+:root[data-cd-theme="light"] .event-card p,
+:root[data-cd-theme="light"] .empty-intelligence p,
+:root[data-cd-theme="light"] .intelligence-columns p,
+:root[data-cd-theme="light"] .calculator-card label,
+:root[data-cd-theme="light"] .calculator-card p,
+:root[data-cd-theme="light"] .source-rail span { color: var(--cd-muted); }
+:root[data-cd-theme="light"] .prose-surface h2,
+:root[data-cd-theme="light"] .prose-surface dfn,
+:root[data-cd-theme="light"] .definition-grid h3,
+:root[data-cd-theme="light"] .launch-card h2,
+:root[data-cd-theme="light"] .launch-card strong,
+:root[data-cd-theme="light"] .event-card h2,
+:root[data-cd-theme="light"] .unlock-event-grid strong,
+:root[data-cd-theme="light"] .empty-intelligence h2,
+:root[data-cd-theme="light"] .parameter-grid strong,
+:root[data-cd-theme="light"] .operational-details summary span { color: var(--cd-text); }
+:root[data-cd-theme="light"] .verification-row,
+:root[data-cd-theme="light"] .verification-ledger-header,
+:root[data-cd-theme="light"] .radar-heading,
+:root[data-cd-theme="light"] .radar-stat-grid > div,
+:root[data-cd-theme="light"] .radar-activity,
+:root[data-cd-theme="light"] .operational-null-grid div { border-color: var(--cd-border); }
+:root[data-cd-theme="light"] .operational-null-grid dt { color: #4a535c; }
+:root[data-cd-theme="light"] .operational-null-grid dd { color: var(--cd-text); }
+:root[data-cd-theme="light"] .verification-row-title strong,
+:root[data-cd-theme="light"] .verification-row strong,
+:root[data-cd-theme="light"] .verification-preview strong,
+:root[data-cd-theme="light"] .radar-heading strong,
+:root[data-cd-theme="light"] .radar-stat-grid strong { color: var(--cd-text); }
+:root[data-cd-theme="light"] .verification-row-title span,
+:root[data-cd-theme="light"] .verification-row p,
+:root[data-cd-theme="light"] .verification-preview p,
+:root[data-cd-theme="light"] .verification-ledger-header,
+:root[data-cd-theme="light"] .radar-stat-grid span,
+:root[data-cd-theme="light"] .radar-infrastructure > p { color: var(--cd-muted); }
