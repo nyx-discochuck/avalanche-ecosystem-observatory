@@ -319,6 +319,7 @@ function Header({ page, setPage, data, live, liveReceipt, onSearch }) {
 }
 
 function LivePulse({ live, snapshot, liveReceipt }) {
+  const [expanded, setExpanded] = useState(() => !window.matchMedia('(max-width: 640px)').matches);
   const network = live?.network;
   const market = live?.market;
   const degradedSources = live?.sources?.filter((source) => !source.ok) || [];
@@ -343,14 +344,15 @@ function LivePulse({ live, snapshot, liveReceipt }) {
     { label: 'AVAX spot', value: formatValue(market?.avaxPriceUsd ?? snapshot.status.avaxPriceUsd), icon: Zap },
   ];
   return (
-    <section className={`live-pulse ${live.status === 'live' && !stale ? '' : 'degraded'}`} aria-label="Live network pulse">
-      <div className="live-pulse-heading">
+    <details className={`live-pulse ${live.status === 'live' && !stale ? '' : 'degraded'}`} aria-label="Live network pulse" open={expanded} onToggle={(event) => setExpanded(event.currentTarget.open)}>
+      <summary className="live-pulse-heading">
         <div>
           <span className="live-label"><span className={`pulse ${stale || partial ? 'degraded' : 'live'}`} /><Radio size={13} /> {stale ? 'STALE · RETAINED OBSERVATION' : partial ? 'CURRENT C-CHAIN · PARTIAL SOURCES' : 'LIVE NETWORK PULSE'}</span>
           <strong>Block {unavailableNumber(network.blockNumber)} · observed head age {finite(network.blockAgeSeconds) ? `${decimal.format(network.blockAgeSeconds)}s` : 'unavailable'} · received {receiptAge}s ago</strong>
         </div>
         <span>{network.sampleBlocks ?? 'Unavailable'}-block rolling window · {live.cadenceSeconds ?? 'unknown'}s source cache · {stale ? 'values retained after a failed or stale refresh' : partial ? 'network current; one or more auxiliary sources degraded' : 'last refresh succeeded'}</span>
-      </div>
+      </summary>
+      <div className="live-pulse-body">
       <div className="live-metric-grid">
         {metrics.map((metric) => (
           <div key={metric.label}>
@@ -377,7 +379,8 @@ function LivePulse({ live, snapshot, liveReceipt }) {
         </span>
       </div>
       <p className="live-disclosure">Live pulse values are short-window operational observations{stale ? ' retained after a failed or explicitly stale refresh' : partial ? '; C-Chain is current while the named auxiliary sources are degraded' : ''}. Audited daily KPIs above and historical charts below remain complete-day snapshots with their original definitions.</p>
-    </section>
+      </div>
+    </details>
   );
 }
 
@@ -435,13 +438,13 @@ function RadarInfrastructure({ radar }) {
   );
 }
 
-function Kpi({ label, value, unit = 'USD', change, note, metric, icon: Icon = TrendingUp, onInfo }) {
+function Kpi({ label, fullLabel = label, value, unit = 'USD', change, note, metric, icon: Icon = TrendingUp, onInfo }) {
   return (
     <article className={`kpi ${!finite(value) ? 'unavailable' : ''}`}>
-      <div className="kpi-label"><Icon size={15} /><span>{label}</span>{metric && <button onClick={() => onInfo(metric)} aria-label={`Methodology for ${label}`}><Info size={14} /></button>}</div>
+      <div className="kpi-label"><Icon size={15} /><span title={fullLabel}>{label}</span>{metric && <button onClick={() => onInfo(metric)} aria-label={`Methodology for ${fullLabel}`}><Info size={14} /></button>}</div>
       <div className="kpi-value">{formatValue(value, unit)}</div>
       <div className="kpi-detail">
-        {finite(change) ? <span className={change >= 0 ? 'positive' : 'negative'}>{change >= 0 ? '+' : ''}{decimal.format(change)}% vs prior day</span> : <span>{note || 'Latest verified observation'}</span>}
+        {finite(change) ? <span className="delta-neutral">{change >= 0 ? '+' : ''}{decimal.format(change)}% vs prior day</span> : <span>{note || 'Latest verified observation'}</span>}
       </div>
     </article>
   );
@@ -522,7 +525,9 @@ function ChartPanel({
   const [expanded, setExpanded] = useState(false);
   const [hidden, setHidden] = useState(new Set());
   const [lockedData, setLockedData] = useState(null);
-  const visibleSeries = (expanded ? series : series.slice(0, 6)).filter((item) => !hidden.has(item.key));
+  const displayedSeries = expanded ? series : series.slice(0, 6);
+  const visibleSeries = displayedSeries.filter((item) => !hidden.has(item.key));
+  const seriesColor = (item) => item.color || COLORS[Math.max(0, series.findIndex((candidate) => candidate.key === item.key)) % COLORS.length];
   const globalRows = rangeRows(data, range, custom);
   const ranged = lockedData || globalRows;
   const chartData = percent ? normalizePercent(ranged, visibleSeries.map((item) => item.key)) : ranged;
@@ -574,19 +579,19 @@ function ChartPanel({
                 <XAxis dataKey="date" tickFormatter={(value) => dateLabel(value).replace(/, \d{2}$/, '')} minTickGap={36} tick={{ fill: '#8d96a5', fontSize: 11 }} axisLine={false} tickLine={false} />
                 <YAxis tickFormatter={(value) => formatValue(value, chartUnit)} width={68} tick={{ fill: '#8d96a5', fontSize: 11 }} axisLine={false} tickLine={false} domain={percent ? [0, 100] : ['auto', 'auto']} />
                 <Tooltip content={<ChartTooltip unit={chartUnit} />} />
-                {visibleSeries.map((item, index) => {
-                  const color = item.color || COLORS[index % COLORS.length];
-                  if (type === 'bar') return <Bar key={item.key} dataKey={item.key} name={item.name} fill={color} stackId={stack ? 'stack' : undefined} radius={stack ? 0 : [2, 2, 0, 0]} maxBarSize={48} />;
-                  if (type === 'line') return <Line key={item.key} type="monotone" dataKey={item.key} name={item.name} stroke={color} strokeWidth={2} dot={false} connectNulls />;
-                  return <Area key={item.key} type="monotone" dataKey={item.key} name={item.name} stroke={color} fill={color} fillOpacity={stack ? 0.62 : 0.16} stackId={stack ? 'stack' : undefined} connectNulls />;
+                {visibleSeries.map((item) => {
+                  const color = seriesColor(item);
+                  if (type === 'bar') return <Bar key={item.key} dataKey={item.key} name={item.name} fill={color} stackId={stack ? 'stack' : undefined} radius={stack ? 0 : [2, 2, 0, 0]} maxBarSize={48} isAnimationActive={false} />;
+                  if (type === 'line') return <Line key={item.key} type="monotone" dataKey={item.key} name={item.name} stroke={color} strokeWidth={2} dot={false} connectNulls isAnimationActive={false} />;
+                  return <Area key={item.key} type="monotone" dataKey={item.key} name={item.name} stroke={color} fill={color} fillOpacity={stack ? 0.62 : 0.16} stackId={stack ? 'stack' : undefined} connectNulls isAnimationActive={false} />;
                 })}
               </Chart>
             </ResponsiveContainer>
           </div>
           <div className="legend" aria-label={`${title} series`}>
-            {(expanded ? series : series.slice(0, 6)).map((item, index) => (
+            {displayedSeries.map((item) => (
               <button key={item.key} className={hidden.has(item.key) ? 'muted' : ''} aria-pressed={!hidden.has(item.key)} onClick={() => toggle(item.key)}>
-                <i style={{ background: item.color || COLORS[index % COLORS.length] }} />{item.name}
+                <i style={{ background: seriesColor(item) }} />{item.name}
               </button>
             ))}
             {series.length > 6 && <button className="show-more" onClick={() => setExpanded((value) => !value)}>{expanded ? 'Show Less' : `Show More (${series.length - 6})`}<ChevronDown size={13} /></button>}
@@ -608,7 +613,7 @@ function CompositionPanel({ title, subtitle, data = [], unit = 'USD', onInfo, me
           <div className="donut">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
-                <Pie data={cleaned} dataKey="value" nameKey="name" innerRadius="62%" outerRadius="88%" paddingAngle={1}>
+                <Pie data={cleaned} dataKey="value" nameKey="name" innerRadius="62%" outerRadius="88%" paddingAngle={1} isAnimationActive={false}>
                   {cleaned.map((row, index) => <Cell key={row.name} fill={COLORS[index % COLORS.length]} />)}
                 </Pie>
                 <Tooltip formatter={(value) => formatValue(Number(value), unit)} />
@@ -653,7 +658,7 @@ function ComparisonPanel({ title, subtitle, data = [], referenceLabel, reference
   );
 }
 
-function DataTable({ title, subtitle, rows = [], columns, searchPlaceholder, defaultSort, empty, onInfo, metric }) {
+function DataTable({ title, subtitle, rows = [], columns, searchPlaceholder, defaultSort, empty, onInfo, metric, rowKey, mobileEssentialKeys = [], renderMobileRow }) {
   const headingId = useId();
   const [query, setQuery] = useState('');
   const [sort, setSort] = useState(defaultSort || { key: columns[0].key, direction: 'desc' });
@@ -666,6 +671,8 @@ function DataTable({ title, subtitle, rows = [], columns, searchPlaceholder, def
     return sort.direction === 'asc' ? order : -order;
   }), [filtered, sort]);
   const updateSort = (key) => setSort((current) => ({ key, direction: current.key === key && current.direction === 'desc' ? 'asc' : 'desc' }));
+  const essentialColumns = mobileEssentialKeys.map((key) => columns.find((column) => column.key === key)).filter(Boolean);
+  const otherColumns = columns.filter((column) => !mobileEssentialKeys.includes(column.key));
 
   return (
     <section className="panel table-panel">
@@ -680,13 +687,21 @@ function DataTable({ title, subtitle, rows = [], columns, searchPlaceholder, def
               <thead><tr>{columns.map((column) => <th key={column.key} aria-sort={sort.key === column.key ? (sort.direction === 'asc' ? 'ascending' : 'descending') : 'none'}><button onClick={() => updateSort(column.key)}>{column.label}<ArrowUpDown size={12} /></button></th>)}</tr></thead>
               <tbody>
                 {sorted.slice(0, limit).map((row, index) => (
-                  <tr key={row.id || row.slug || row.address || `${index}`}>
+                  <tr key={rowKey ? rowKey(row, index) : (row.id || row.slug || row.address || `${index}`)}>
                     {columns.map((column) => <td key={column.key} data-label={column.label}>{column.render ? column.render(row[column.key], row) : row[column.key]}</td>)}
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
+          {essentialColumns.length > 0 && <div className="mobile-essential-table" aria-labelledby={headingId}>
+            <div className="mobile-sort"><label>Sort markets<select value={sort.key} onChange={(event) => setSort({ key: event.target.value, direction: 'desc' })}>{columns.map((column) => <option key={column.key} value={column.key}>{column.label}</option>)}</select></label><button type="button" aria-label={`Sort ${sort.direction === 'asc' ? 'descending' : 'ascending'}`} aria-pressed={sort.direction === 'asc'} onClick={() => setSort((current) => ({ ...current, direction: current.direction === 'asc' ? 'desc' : 'asc' }))}>{sort.direction === 'asc' ? 'Ascending' : 'Descending'} <ArrowUpDown size={13} /></button></div>
+            {sorted.slice(0, limit).map((row, index) => renderMobileRow ? <article className="mobile-market-row lending-market-card" key={rowKey ? rowKey(row, index) : (row.id || row.slug || row.address || `${index}`)}>{renderMobileRow(row, columns)}</article> : <article className="mobile-market-row" key={rowKey ? rowKey(row, index) : (row.id || row.slug || row.address || `${index}`)}>
+              <div className="mobile-market-identity">{essentialColumns.slice(0, 3).map((column) => <span key={column.key}><small>{column.label}</small><strong>{column.render ? column.render(row[column.key], row) : row[column.key]}</strong></span>)}</div>
+              <div className="mobile-market-essentials">{essentialColumns.slice(3).map((column) => <span key={column.key}><small>{column.label}</small><strong>{column.render ? column.render(row[column.key], row) : row[column.key]}</strong></span>)}</div>
+              <details><summary>All market fields</summary><dl>{otherColumns.map((column) => <div key={column.key}><dt>{column.label}</dt><dd>{column.render ? column.render(row[column.key], row) : row[column.key]}</dd></div>)}</dl></details>
+            </article>)}
+          </div>}
           <div className="table-footer"><span>Showing {Math.min(limit, sorted.length)} of {sorted.length}</span>{limit < sorted.length && <button onClick={() => setLimit((value) => value + 10)}>Show more</button>}</div>
         </>
       )}
@@ -694,12 +709,31 @@ function DataTable({ title, subtitle, rows = [], columns, searchPlaceholder, def
   );
 }
 
+function LendingMarketMobileCard({ row, columns }) {
+  const basis = row.rateBasis || 'basis not reported';
+  const headline = row.includedInHeadline === false || row.eligible === false || row.visibility === 'hidden' ? 'Excluded / non-additive' : 'Tracked eligible';
+  const age = Number.isFinite(Date.parse(row.observedAt)) ? Math.max(0, Math.floor((Date.now() - Date.parse(row.observedAt)) / 1000)) : null;
+  const freshness = row.freshness ? `${age > (row.maxAgeSeconds || 900) ? 'stale' : row.freshness}${age == null ? '' : ` · ${integer.format(age)}s`}` : 'adapter observation';
+  const visibleKeys = new Set(['protocol', 'marketName', 'symbol', 'includedInHeadline', 'supplyRatePct', 'borrowRatePct', 'rateBasis', 'availableLiquidityUsd', 'riskState', 'state', 'freshness', 'sourceUrl']);
+  const detailColumns = columns.filter((column) => !visibleKeys.has(column.key));
+  return <>
+    <header className="lending-market-identity"><strong>{String(row.protocol || 'Unknown protocol').replaceAll('-', ' ')}</strong><span>{row.marketName || row.name || 'Unnamed market'} · {row.symbol || 'Unknown asset'}</span></header>
+    <div className="lending-market-comparison">
+      <span><small>Headline scope</small><strong>{headline}</strong></span>
+      <span className="lending-market-rates"><small>Supply / Borrow · {basis}</small><strong>{formatValue(row.supplyRatePct, 'percent')} / {formatValue(row.borrowRatePct, 'percent')}</strong>{row.sourceUrl ? <a href={row.sourceUrl} target="_blank" rel="noreferrer">{row.sourceLabel || row.rateSource || 'Official source'} <ExternalLink size={12} /></a> : <em>{row.rateSource || 'Source unavailable'}</em>}</span>
+      <span><small>Liquid cash</small><strong>{formatValue(row.availableLiquidityUsd)}</strong></span>
+      <span><small>Risk · state / freshness</small><strong>{row.riskState || 'not classified'} · {row.state || 'unknown'} / {freshness}</strong></span>
+    </div>
+    <details><summary>All market fields</summary><dl>{detailColumns.map((column) => <div key={column.key}><dt>{column.label}</dt><dd>{column.render ? column.render(row[column.key], row) : row[column.key]}</dd></div>)}</dl></details>
+  </>;
+}
+
 function ProtocolCell({ value, row }) {
   return <span className="protocol-cell">{row.logo ? <img src={row.logo} alt="" /> : <span className="protocol-fallback">{value?.[0] || '?'}</span>}<strong>{value}</strong></span>;
 }
 
-function IntelligenceHeader({ eyebrow, title, description, updated = 'August 29, 2026' }) {
-  return <header className="intelligence-hero"><span>{eyebrow}</span><h1>{title}</h1><p>{description}</p><small><Clock3 size={12} /> Source review: {updated} · UTC</small></header>;
+function IntelligenceHeader({ eyebrow, title, description, updated = 'August 29, 2026', className = '' }) {
+  return <header className={`intelligence-hero${className ? ` ${className}` : ''}`}><h1>{title}</h1><span>{eyebrow}</span><p>{description}</p><small><Clock3 size={12} /> Source review: {updated} · UTC</small></header>;
 }
 
 function LaunchCard({ kicker, title, copy, page, setPage, href }) {
@@ -709,9 +743,10 @@ function LaunchCard({ kicker, title, copy, page, setPage, href }) {
 
 function BeginnersPage({ setPage }) {
   return <>
-    <IntelligenceHeader eyebrow="START HERE · AVALANCHE 101" title="A practical guide to the Avalanche ecosystem" description="Learn the network in plain language, then move directly from each concept into the live Observatory metric that measures it." />
+    <IntelligenceHeader className="beginner-hero" eyebrow="START HERE · AVALANCHE 101" title="A practical guide to the Avalanche ecosystem" description="Learn the network in plain language, then move directly from each concept into the live Observatory metric that measures it." />
+    <nav className="learning-path" aria-label="Three-step learning path"><a href="#section-beginners-what-is-avalanche"><span>1 · ORIENT</span><strong>Understand the network</strong></a><button onClick={() => setPage('blockspace')}><span>2 · OBSERVE</span><strong>Inspect C-Chain activity</strong></button><button onClick={() => setPage('verification')}><span>3 · VERIFY</span><strong>Check source evidence</strong></button></nav>
     <section className="reading-surface prose-surface">
-      <h2>What is Avalanche?</h2><p>Avalanche is a network for moving assets and running applications. AVAX is its native asset: it is used for transaction fees, staking the Primary Network, and denominating some network-level costs. The dashboard focuses heavily on C-Chain, Avalanche’s EVM-compatible chain, while clearly labeling metrics that cover the wider Primary Network.</p>
+      <h2 id="section-beginners-what-is-avalanche">What is Avalanche?</h2><p>Avalanche is a network for moving assets and running applications. AVAX is its native asset: it is used for transaction fees, staking the Primary Network, and denominating some network-level costs. The dashboard focuses heavily on C-Chain, Avalanche’s EVM-compatible chain, while clearly labeling metrics that cover the wider Primary Network.</p>
       <div className="definition-grid">
         <article><span>CORE CHAIN</span><h3>C-Chain</h3><p>The EVM-compatible chain where most Avalanche DeFi smart contracts and familiar wallet transactions live.</p><button onClick={() => setPage('blockspace')}>View live C-Chain activity →</button></article>
         <article><span>APP NETWORKS</span><h3>Avalanche L1s</h3><p>Purpose-built networks with their own validator and execution choices. “Avalanche activity” should not be assumed to mean C-Chain alone.</p><a href="https://build.avax.network/docs/avalanche-l1s" target="_blank" rel="noreferrer">Read official L1 docs →</a></article>
@@ -747,6 +782,7 @@ function ExpertsPage({ data, live, setPage }) {
 
 function GovernancePage() {
   return <><IntelligenceHeader eyebrow="FORWARD INTELLIGENCE" title="Avalanche governance and network-change watch" description="Avalanche Community Proposals are technical coordination documents. A discussion thread or ACP status is not automatically a binding AVAX token-holder vote." />
+    <section className="governance-summary" aria-label="Governance source coverage"><div><span>COVERAGE</span><strong>{GOVERNANCE_ITEMS.length} official ACP records</strong></div><div><span>REVIEWED AS OF</span><strong>August 29, 2026</strong></div><p>Status changes require an official ACP repository or Builder Hub update. Next action: open the linked official proposal before relying on implementation or activation.</p></section>
     <div className="event-list">{GOVERNANCE_ITEMS.map((item) => <article key={item.id} className="event-card"><div className="event-status"><span className={`confidence ${item.status === 'Implementable' ? 'high' : 'medium'}`}>{item.status}</span><small>{item.window}</small></div><h2>{item.title}</h2><time>{item.date}</time><p>{item.impact}</p><a href={item.url} target="_blank" rel="noreferrer">Official proposal source <ExternalLink size={12} /></a></article>)}</div>
     <CoverageNote title="Governance methodology" detail="Tracked from the official Avalanche Foundation ACP repository and Avalanche Builder Hub. Dates describe publication/discussion or reviewed status unless an official activation window is explicitly published. The Observatory does not convert GitHub reactions into vote counts." />
   </>;
@@ -754,20 +790,23 @@ function GovernancePage() {
 
 function UnlocksPage({ live }) {
   return <><IntelligenceHeader eyebrow="SUPPLY EVENTS" title="Avalanche token unlocks and emissions" description="DefiLlama-tracked AVAX vesting events, separated from observed protocol staking emissions and labeled with source confidence." />
-    <div className="event-list">{AVAX_UNLOCKS.map((item) => <article key={item.id} className="event-card unlock-event"><div className="event-status"><span className="confidence medium">{item.confidence}</span><small>{item.eventType}</small></div><div className="unlock-event-grid"><div><span>UNLOCK DATE</span><strong>{dateTimeLabel(item.date)}</strong></div><div><span>AMOUNT</span><strong>{compact.format(item.amount)} {item.token}</strong></div><div><span>MAX SUPPLY</span><strong>{decimal.format(item.maxSupplyPct)}%</strong></div><div><span>OF FLOAT</span><strong>{decimal.format(item.floatPct)}%</strong></div><div><span>RECIPIENT</span><strong>{item.recipient}</strong></div></div><p>{item.context}</p><a href={item.source} target="_blank" rel="noreferrer">View DefiLlama schedule <ExternalLink size={12} /></a></article>)}</div>
+    <div className="event-list">{AVAX_UNLOCKS.map((item) => { const past = Date.parse(item.date) < Date.now(); return <article key={item.id} className="event-card unlock-event"><div className="event-status"><span className="confidence medium">{past ? 'Past scheduled date' : 'Scheduled'}</span><small>{item.confidence} · {item.eventType}</small></div><div className="unlock-event-grid"><div><span>UNLOCK DATE</span><strong>{dateTimeLabel(item.date)}</strong></div><div><span>AMOUNT</span><strong>{compact.format(item.amount)} {item.token}</strong></div><div><span>MAX SUPPLY</span><strong>{decimal.format(item.maxSupplyPct)}%</strong></div><div><span>OF FLOAT</span><strong>{decimal.format(item.floatPct)}%</strong></div><div><span>RECIPIENT</span><strong>{item.recipient}</strong></div></div><p>{item.context} {past ? 'The scheduled date has passed, but this snapshot does not independently prove execution.' : 'This future schedule is not execution proof.'}</p><a href={item.source} target="_blank" rel="noreferrer">View DefiLlama schedule <ExternalLink size={12} /></a></article>; })}</div>
     <div className="two-column intelligence-columns"><article className="reading-surface"><span className="surface-kicker">OBSERVED PROTOCOL EMISSIONS</span><h2>AVAX staking rewards minted</h2><strong className="headline-number">{formatValue(live?.economics?.stakingRewardsMintedAvax, 'AVAX')}</strong><p>Cumulative official network observation. This is protocol issuance, not a team or investor token unlock.</p><small>Updated {dateTimeLabel(live?.economics?.updatedAt)}</small></article><article className="reading-surface"><span className="surface-kicker">ADMISSION RULE</span><h2>What counts as confirmed?</h2><p>A dated project-authored vesting, emissions, governance, or foundation source that identifies the token and event. Amount, supply percentage, and recipient are shown only when the source states them.</p><p>Third-party estimates can be added later, but must carry an “estimated” badge and their own methodology.</p></article></div>
     <CoverageNote title="DefiLlama unlock methodology" detail="AVAX unlock dates, allocation categories, amounts, and supply percentages are trusted from DefiLlama and reviewed August 29, 2026. This is third-party schedule data, not an Avalanche API observation. DefiLlama notes that exact Seed and Private sale dates were unavailable and assigns the latest dates described; staking rewards are sourced separately from on-chain P-Chain supply data. USD value is intentionally calculated nowhere in this static event because it changes with AVAX price." />
   </>;
 }
 
 function StakingPage({ live }) {
-  const [amount, setAmount] = useState(2000); const [days, setDays] = useState(365);
+  const [role, setRole] = useState('validator'); const [amount, setAmount] = useState(2000); const [days, setDays] = useState(365);
   const supply = live?.economics?.totalSupplyAvax; const cap = 720_000_000;
+  const minimum = role === 'validator' ? 2000 : 25;
+  const amountValid = Number.isFinite(amount) && Number.isInteger(amount) && amount >= minimum;
+  const daysValid = Number.isFinite(days) && Number.isInteger(days) && days >= 14 && days <= 365;
   const arr = finite(supply) ? ((cap - supply) / supply) * (0.10 + (0.12 - 0.10) * (days / 365)) : null;
-  const reward = finite(arr) ? amount * arr * (days / 365) : null;
+  const reward = finite(arr) && amountValid && daysValid ? amount * arr * (days / 365) : null;
   return <><IntelligenceHeader eyebrow="VALIDATION ECONOMICS" title="AVAX staking and validator economics" description="Current official requirements with a transparent, adjustable estimate. Rewards are not guaranteed and validator operating costs are excluded." />
-    <div className="staking-layout"><section className="calculator-card"><span>ESTIMATED PROTOCOL REWARD</span><strong>{formatValue(reward, 'AVAX')}</strong><small>{finite(arr) ? `${decimal.format(arr * 100)}% modeled annualized rate` : 'Waiting for official live supply'}</small><label>Stake amount <input type="number" min="25" value={amount} onChange={(e) => setAmount(Math.max(0, Number(e.target.value)))} /><em>AVAX</em></label><label>Validation duration <input type="range" min="14" max="365" value={days} onChange={(e) => setDays(Number(e.target.value))} /><em>{days} days</em></label><p>Estimate = stake × modeled ARR × duration / 365. ARR uses live current supply, the 720M cap, and the documented 10%–12% duration curve. It excludes delegation fees, downtime, hardware, hosting, and tax.</p></section>
-      <section className="parameter-grid"><article><span>VALIDATOR MINIMUM</span><strong>2,000 AVAX</strong><small>Current Mainnet documentation</small></article><article><span>DELEGATOR MINIMUM</span><strong>25 AVAX</strong><small>Current Mainnet documentation</small></article><article><span>DURATION</span><strong>14–365 days</strong><small>Locked for the selected term</small></article><article><span>MIN. DELEGATION FEE</span><strong>2%</strong><small>Validator-set rate floor</small></article><article><span>REWARD UPTIME</span><strong>&gt;80%</strong><small>Aim for 100%; stake-weighted measurement</small></article><article><span>MAXIMUM WEIGHT</span><strong>min(3M, 5× stake)</strong><small>Own stake plus delegations</small></article></section></div>
+    <section aria-labelledby="staking-requirements"><h2 id="staking-requirements">Current validator requirements</h2><div className="parameter-grid"><article><span>VALIDATOR MINIMUM</span><strong>2,000 AVAX</strong><small>Current Mainnet documentation</small></article><article><span>DELEGATOR MINIMUM</span><strong>25 AVAX</strong><small>Current Mainnet documentation</small></article><article><span>DURATION</span><strong>14–365 days</strong><small>Locked for the selected term</small></article><article><span>MIN. DELEGATION FEE</span><strong>2%</strong><small>Validator-set rate floor</small></article><article><span>REWARD UPTIME</span><strong>&gt;80%</strong><small>Aim for 100%; stake-weighted measurement</small></article><article><span>MAXIMUM WEIGHT</span><strong>min(3M, 5× stake)</strong><small>Own stake plus delegations</small></article></div></section>
+    <section className="staking-calculator" aria-labelledby="staking-calculator"><h2 id="staking-calculator">Staking reward calculator</h2><div className="calculator-card"><span>ESTIMATED PROTOCOL REWARD</span><strong>{reward === null ? '—' : formatValue(reward, 'AVAX')}</strong><small>{!finite(supply) ? 'Unavailable until official live current supply is present' : amountValid && daysValid ? `${decimal.format(arr * 100)}% modeled annualized rate` : 'Enter a valid role minimum and duration to estimate'}</small>{!finite(supply) && <p className="calculator-prerequisite"><strong>Required input unavailable.</strong> The calculator needs the official live current-supply value. Review current validator requirements and the calculation method below while controls are disabled.</p>}<label>Participation role<select value={role} disabled={!finite(supply)} onChange={(e) => { const next = e.target.value; setRole(next); setAmount(next === 'validator' ? 2000 : 25); }}><option value="validator">Validator · 2,000 AVAX minimum</option><option value="delegator">Delegator · 25 AVAX minimum</option></select></label><label>Stake amount <input type="number" min={minimum} step="1" value={Number.isFinite(amount) ? amount : ''} disabled={!finite(supply)} aria-invalid={!amountValid} aria-describedby="staking-amount-help staking-input-requirement" onChange={(e) => setAmount(e.target.value === '' ? NaN : Number(e.target.value))} /><em>AVAX</em></label><small id="staking-amount-help">Whole AVAX only; minimum {minimum.toLocaleString()} for the selected {role} role.</small><label>Staking duration <input type="number" min="14" max="365" step="1" value={Number.isFinite(days) ? days : ''} disabled={!finite(supply)} aria-invalid={!daysValid} aria-describedby="staking-duration-help staking-input-requirement" onChange={(e) => setDays(e.target.value === '' ? NaN : Number(e.target.value))} /><em>days</em></label><small id="staking-duration-help">Enter a whole-number term from 14 through 365 days.</small><p id="staking-input-requirement">Estimate = stake × modeled ARR × duration / 365. ARR uses live current supply, the 720M cap, and the documented 10%–12% duration curve. It excludes delegation fees, downtime, hardware, hosting, tax, and other operating costs. This educational estimate is not financial advice and rewards are not guaranteed.</p></div></section>
     <div className="source-rail"><a href="https://build.avax.network/docs/primary-network/validate/how-to-stake" target="_blank" rel="noreferrer">Official staking parameters <ExternalLink size={12} /></a><a href="https://build.avax.network/docs/acps/285-reduce-minimum-consumption-rate" target="_blank" rel="noreferrer">Reward formula and proposed change <ExternalLink size={12} /></a><span>Live supply updated {dateTimeLabel(live?.economics?.updatedAt)}</span></div>
     <CoverageNote title="Estimate disclosure" detail="Observed: current supply and cumulative rewards from Avalanche Data API. Documented parameters: Builder Hub, reviewed August 29, 2026. Calculated: displayed ARR and reward. The ACP-285 proposed 7.5% floor is not used until activated and reflected in official current parameters." />
   </>;
@@ -851,24 +890,25 @@ function BlockspacePage({ data, live, liveReceipt, range, custom, setRange, setC
     <>
       <PageTitle title="Blockspace" description="Verified block and transaction statistics derived from local C-Chain parquet archives." data={data} />
       <LivePulse live={live} snapshot={data} liveReceipt={liveReceipt} />
-      <Timeframe range={range} setRange={setRange} custom={custom} setCustom={setCustom} />
-      <div className="kpi-grid four">
+      <div className="kpi-grid four blockspace-kpis">
         <Kpi label="Average Transaction Cost" value={day.average_fee_avax} unit="AVAX" change={previousChange(rows, 'average_fee_avax')} icon={Fuel} metric="average_transaction_cost" onInfo={onInfo} />
         <Kpi label="Average Gas Price" value={day.average_gas_price_gwei} unit="Gwei" change={previousChange(rows, 'average_gas_price_gwei')} metric="average_gas_price" onInfo={onInfo} />
-        <Kpi label="Daily Transactions" value={day.transactions} unit="transactions" change={previousChange(rows, 'transactions')} metric="daily_transactions" onInfo={onInfo} />
-        <Kpi label="Distinct transaction senders (transaction.from)" value={day.active_addresses} unit="address" change={previousChange(rows, 'active_addresses')} metric="active_addresses" onInfo={onInfo} />
-        <Kpi label="Top-level contract-creation transactions" value={day.contract_creations} unit="contracts" change={previousChange(rows, 'contract_creations')} metric="contract_creations" onInfo={onInfo} />
+        <Kpi label="Daily transactions" value={day.transactions} unit="transactions" change={previousChange(rows, 'transactions')} metric="daily_transactions" onInfo={onInfo} />
+        <Kpi label="Unique transaction senders" fullLabel="Distinct transaction senders (transaction.from)" value={day.active_addresses} unit="address" change={previousChange(rows, 'active_addresses')} metric="active_addresses" onInfo={onInfo} />
+        <Kpi label="Contract-creation transactions" fullLabel="Top-level contract-creation transactions" value={day.contract_creations} unit="contracts" change={previousChange(rows, 'contract_creations')} metric="contract_creations" onInfo={onInfo} />
         <Kpi label="Average Throughput" value={day.throughput_tps} unit="TPS" change={previousChange(rows, 'throughput_tps')} metric="throughput" onInfo={onInfo} />
         <Kpi label="Transaction Failure Rate" value={day.failure_rate_pct} unit="percent" change={previousChange(rows, 'failure_rate_pct')} metric="transaction_failure_rate" onInfo={onInfo} />
         <Kpi label="Block Utilization" value={day.average_block_utilization_pct} unit="percent" change={previousChange(rows, 'average_block_utilization_pct')} metric="block_utilization" onInfo={onInfo} />
       </div>
+      <Timeframe range={range} setRange={setRange} custom={custom} setCustom={setCustom} />
       <div className="two-column">
         <ChartPanel title="Daily Transactions" data={rows} series={[{ key: 'transactions', name: 'Transactions' }]} range={range} custom={custom} type="bar" unit="transactions" metric="daily_transactions" onInfo={onInfo} />
         <ChartPanel title="Distinct transaction senders (transaction.from)" subtitle="Avalanche activeSenders may also infer senders from token-transfer logs, so the values are not expected to match." data={rows} series={[{ key: 'active_addresses', name: 'Distinct transaction.from senders' }]} range={range} custom={custom} type="line" unit="address" metric="active_addresses" onInfo={onInfo} />
       </div>
       <div className="two-column">
         <ChartPanel title="Average and Median Fees" data={rows} series={[{ key: 'average_fee_avax', name: 'Average fee' }, { key: 'median_fee_avax', name: 'Median fee' }]} range={range} custom={custom} type="line" unit="AVAX" metric="average_transaction_cost" onInfo={onInfo} />
-        <ChartPanel title="Throughput and Failure Rate" data={rows} series={[{ key: 'throughput_tps', name: 'TPS' }, { key: 'failure_rate_pct', name: 'Failure rate %' }]} range={range} custom={custom} type="line" unit="" metric="blockspace_performance" onInfo={onInfo} />
+        <ChartPanel title="Average Throughput" subtitle="Transactions per second; independent TPS axis." data={rows} series={[{ key: 'throughput_tps', name: 'TPS' }]} range={range} custom={custom} type="line" unit="TPS" metric="throughput" onInfo={onInfo} />
+        <ChartPanel title="Transaction Failure Rate" subtitle="Failed transactions as a percentage; independent percent axis." data={rows} series={[{ key: 'failure_rate_pct', name: 'Failure rate' }]} range={range} custom={custom} type="line" unit="percent" metric="transaction_failure_rate" onInfo={onInfo} />
       </div>
       <DataTable title="Top Contracts by Blockspace" rows={data.blockspace.topContracts} columns={[
         { key: 'label', label: 'Contract', render: (value, row) => <span className="address-cell"><strong>{value || 'Unlabeled contract'}</strong><code>{row.address.slice(0, 8)}…{row.address.slice(-6)}</code></span> },
@@ -934,23 +974,25 @@ function EconomicsPage({ data, live, range, custom, setRange, setCustom, onInfo 
   const economics = data.economics;
   const day = latest(economics.feeHistory);
   const supply = live?.economics;
+  const hasOfficialSupply = finite(supply?.totalSupplyAvax);
   return (
     <>
       <PageTitle title="Economics" description="Primary Network tokenomics and C-Chain fee burn, using Avalanche-native accounting." data={data} />
-      <Timeframe range={range} setRange={setRange} custom={custom} setCustom={setCustom} />
       <div className="kpi-grid four">
         <Kpi label="30-day covered C-Chain burn" value={economics.kpis.coveredFeesBurnedAvax} unit="AVAX" note="Coverage window; not all-time burn" metric="transaction_fees_burned" onInfo={onInfo} />
         <Kpi label="Current-Price Fee Value" value={economics.kpis.coveredFeesBurnedUsdCurrentPrice} note="Uses current AVAX price" metric="transaction_fees_burned" onInfo={onInfo} />
         <Kpi label="Latest Daily Burn" value={day.feesAvax} unit="AVAX" metric="transaction_fees_burned" onInfo={onInfo} />
         <Kpi label="30-day annualized run rate" value={latest(economics.annualizedHistory).avax30d} unit="AVAX" note="30-day daily average × 365" metric="annualized_fee_burn" onInfo={onInfo} />
-        <Kpi label="Current AVAX Supply" value={supply?.totalSupplyAvax} unit="AVAX" note={`Official update · ${dateTimeLabel(supply?.updatedAt)}`} metric="avax_supply_ledger" onInfo={onInfo} />
-        <Kpi label="Net Supply Since Genesis" value={supply?.netSupplySinceGenesisAvax} unit="AVAX" note="Rewards minted less P/C/X burns" metric="avax_supply_ledger" onInfo={onInfo} />
-        <Kpi label="Staking Rewards Minted" value={supply?.stakingRewardsMintedAvax} unit="AVAX" note="Cumulative protocol rewards" metric="avax_staking_rewards" onInfo={onInfo} />
-        <Kpi label="Network Fees Burned" value={supply?.networkBurnedAvax} unit="AVAX" note="Cumulative P + C + X fees" metric="avax_network_fee_burn" onInfo={onInfo} />
+        {hasOfficialSupply && <Kpi label="Current AVAX Supply" value={supply.totalSupplyAvax} unit="AVAX" note={`Official update · ${dateTimeLabel(supply.updatedAt)}`} metric="avax_supply_ledger" onInfo={onInfo} />}
+        {hasOfficialSupply && <Kpi label="Net Supply Since Genesis" value={supply.netSupplySinceGenesisAvax} unit="AVAX" note="Rewards minted less P/C/X burns" metric="avax_supply_ledger" onInfo={onInfo} />}
+        {hasOfficialSupply && <Kpi label="Staking Rewards Minted" value={supply.stakingRewardsMintedAvax} unit="AVAX" note="Cumulative protocol rewards" metric="avax_staking_rewards" onInfo={onInfo} />}
+        {hasOfficialSupply && <Kpi label="Network Fees Burned" value={supply.networkBurnedAvax} unit="AVAX" note="Cumulative P + C + X fees" metric="avax_network_fee_burn" onInfo={onInfo} />}
       </div>
+      <Timeframe range={range} setRange={setRange} custom={custom} setCustom={setCustom} />
+      {!hasOfficialSupply && <details className="panel compact-unavailable"><summary><strong>Official supply accounting unavailable</strong><span>Expand source status</span></summary><p>The official live supply response is unavailable in this preview state. No supply, rewards, or network-burn values are inferred. The independent C-Chain burn history remains available below.</p></details>}
       <CoverageNote title="Avalanche-native accounting" detail="Primary Network validators earn newly minted staking rewards; C-, P-, and X-Chain transaction fees are burned instead of paid to block producers. Supply values are live official observations, while the daily C-Chain series below remains independently indexed and audited." />
-      <SupplyLedger supply={supply} onInfo={onInfo} />
       <ChartPanel title="Daily Fee Burn" subtitle="AVAX burned by covered C-Chain transactions." data={economics.feeHistory} series={[{ key: 'feesAvax', name: 'Fees burned' }]} range={range} custom={custom} type="bar" unit="AVAX" metric="transaction_fees_burned" onInfo={onInfo} />
+      {hasOfficialSupply && <SupplyLedger supply={supply} onInfo={onInfo} />}
       <div className="two-column">
         <ChartPanel title="Average and Median Transaction Fee" data={economics.feeHistory} series={[{ key: 'averageFeeAvax', name: 'Average' }, { key: 'medianFeeAvax', name: 'Median' }]} range={range} custom={custom} type="line" unit="AVAX" metric="average_transaction_cost" onInfo={onInfo} />
         <ChartPanel title="30-day annualized run rate" subtitle="Derived: displayed 30-day daily average × 365; not a forecast or all-time burn." data={economics.annualizedHistory} series={[{ key: 'avax30d', name: '30-day annualized run rate' }]} range={range} custom={custom} type="line" unit="AVAX" metric="annualized_fee_burn" onInfo={onInfo} />
@@ -966,13 +1008,13 @@ function SpotPage({ data, range, custom, setRange, setCustom, onInfo }) {
   return (
     <>
       <PageTitle title="Spot Trading" description="Liquidity, protocol volume, and verified architecture coverage for Avalanche spot markets." data={data} />
-      <Timeframe range={range} setRange={setRange} custom={custom} setCustom={setCustom} />
       <div className="kpi-grid four">
         <Kpi label="Spot DEX adapter TVL proxy" value={spot.ammLiquidityUsd} metric="amm_liquidity" onInfo={onInfo} />
         <Kpi label="DEX Volume · Latest Complete Day" value={spot.volume24hUsd} note="DeFiLlama completed UTC bucket" metric="dex_volume" onInfo={onInfo} />
         <Kpi label="DEX Volume (7d)" value={spot.volume7dUsd} metric="dex_volume" onInfo={onInfo} />
         <Kpi label="DEX Volume (30d)" value={spot.volume30dUsd} metric="dex_volume" onInfo={onInfo} />
       </div>
+      <Timeframe range={range} setRange={setRange} custom={custom} setCustom={setCustom} />
       <ChartPanel title="DEX Volume Over Time" data={spot.totalHistory} series={[{ key: 'total', name: 'Spot volume' }]} range={range} custom={custom} type="bar" metric="dex_volume" onInfo={onInfo} />
       <ChartPanel title="DEX Volume by Liquidity Source" subtitle="Direct protocol adapter volume; Pharaoh adapters are combined and aggregator adapters are excluded." data={spot.breakdownHistory} series={series} range={range} custom={custom} stack allowPercent metric="dex_volume" onInfo={onInfo} />
       <div className="two-column">
@@ -991,7 +1033,7 @@ function SpotPage({ data, range, custom, setRange, setCustom, onInfo }) {
           { key: 'change1d', label: '24h Change', render: (value) => formatValue(value, 'percent') },
         ]} />
       </div>
-      <ChartPanel title="Spot Volume by Pair Category" data={spot.pairCategories} series={[]} range={range} custom={custom} metric="dex_volume" onInfo={onInfo} empty={{ title: 'Pair-level volume withheld', detail: data.overview.dex.pairCoverage }} />
+      <details className="panel compact-unavailable"><summary><strong>Pair-level volume withheld</strong><span>Expand coverage disclosure</span></summary><p>{data.overview.dex.pairCoverage} No pair values are invented; the protocol volume leaders above remain the meaningful default comparison.</p></details>
     </>
   );
 }
@@ -1048,16 +1090,19 @@ function TokenizedPage({ data, range, custom, setRange, setCustom, onInfo }) {
   return (
     <>
       <PageTitle title="Tokenized Assets" description="Verified native Avalanche RWA issuances, separated from ordinary stablecoins and bridged representations." data={data} />
-      <Timeframe range={range} setRange={setRange} custom={custom} setCustom={setCustom} />
       <div className="kpi-grid four">
         <Kpi label="Verified Assets" value={tokenized.kpis.verifiedTokenContracts} unit="contracts" metric="tokenized_asset_count" onInfo={onInfo} />
         <Kpi label="Verified Contract Value" value={tokenized.kpis.verifiedContractValueUsd} note={`${tokenized.kpis.valueCoverage || `${tokenized.kpis.valuedAssets}/${tokenized.kpis.trackedAssets}`} valued · ${tokenized.kpis.valueAvailability || 'partial'}`} metric="tokenized_asset_value" onInfo={onInfo} />
         <Kpi label="Broader RWA Adapter TVL" value={tokenized.kpis.rwaAdapterTvlUsd} note="Separate adapter scope; not additive" metric="rwa_adapter_tvl" onInfo={onInfo} />
         <Kpi label="Summed Contract Addresses" value={tokenized.kpis.verifiedHolders} unit="address" note={`${tokenized.kpis.holderCoverage || 'legacy snapshot'} · not unique investors`} metric="tokenized_asset_holders" onInfo={onInfo} />
       </div>
-      <CoverageNote title="Coverage and scope" detail={`${tokenized.scope?.completeness || 'Curated verified-contract coverage.'} ${tokenized.kpis.valuedAssets} of ${tokenized.kpis.trackedAssets} assets valued from exact-contract supply × validated RedStone valuation. Stablecoins, bridged wrappers, DeFiLlama adapter TVL, and RWA.xyz comparator estimates remain separate and are not additive.`} />
-      <CoverageNote title="Valuation freshness" detail={`${currentValuedAssets} current asset valuations; ${retainedValueAssets} retained last-good observations. ${tokenized.kpis.valueAvailability === 'available' ? 'The eligible exact-contract aggregate is available.' : `Aggregate coverage is ${tokenized.kpis.valueAvailability || 'unavailable'}.`} Source status and independent price/supply observation times are shown per asset; publishing a snapshot does not refresh those observations.`} />
-      <CoverageNote title="Canonical source and activity coverage" detail={tokenized.activityStatus ? `Gateway block ${tokenized.canonicalSnapshot?.block?.number?.toLocaleString?.() || 'unavailable'} observed ${dateTimeLabel(tokenized.canonicalSnapshot?.block?.timestamp)}. Activity ${tokenized.activityStatus.availability}: fully covered archive days ${tokenized.activityStatus.coverage?.start || 'unknown'}–${tokenized.activityStatus.coverage?.end || 'unknown'}; explicit zeros only inside that interval. ${tokenized.activityStatus.limitation}` : 'Canonical activity coverage unavailable.'} />
+      <Timeframe range={range} setRange={setRange} custom={custom} setCustom={setCustom} />
+      <section className="tokenized-coverage" aria-label="Technical coverage and provenance">
+        <p><strong>Exact-contract scope:</strong> {tokenized.kpis.valuedAssets}/{tokenized.kpis.trackedAssets} assets valued. Adapter TVL and comparators are separate and non-additive. <strong>Freshness:</strong> {currentValuedAssets} current; {retainedValueAssets} retained last-good. <strong>Activity:</strong> {tokenized.activityStatus?.availability || 'unavailable'}.</p>
+        <details><summary>Coverage and exact-contract scope</summary><CoverageNote title="Coverage and scope" detail={`${tokenized.scope?.completeness || 'Curated verified-contract coverage.'} ${tokenized.kpis.valuedAssets} of ${tokenized.kpis.trackedAssets} assets valued from exact-contract supply × validated RedStone valuation. Stablecoins, bridged wrappers, DeFiLlama adapter TVL, and RWA.xyz comparator estimates remain separate and are not additive.`} /></details>
+        <details><summary>Valuation freshness and caveats</summary><CoverageNote title="Valuation freshness" detail={`${currentValuedAssets} current asset valuations; ${retainedValueAssets} retained last-good observations. ${tokenized.kpis.valueAvailability === 'available' ? 'The eligible exact-contract aggregate is available.' : `Aggregate coverage is ${tokenized.kpis.valueAvailability || 'unavailable'}.`} Source status and independent price/supply observation times are shown per asset; publishing a snapshot does not refresh those observations.`} /></details>
+        <details><summary>Canonical provenance and activity coverage</summary><CoverageNote title="Canonical source and activity coverage" detail={tokenized.activityStatus ? `Gateway block ${tokenized.canonicalSnapshot?.block?.number?.toLocaleString?.() || 'unavailable'} observed ${dateTimeLabel(tokenized.canonicalSnapshot?.block?.timestamp)}. Activity ${tokenized.activityStatus.availability}: fully covered archive days ${tokenized.activityStatus.coverage?.start || 'unknown'}–${tokenized.activityStatus.coverage?.end || 'unknown'}; explicit zeros only inside that interval. ${tokenized.activityStatus.limitation}` : 'Canonical activity coverage unavailable.'} /></details>
+      </section>
       <div className="asset-toolbar">
         <label><span>Asset</span><select value={asset?.id || ''} onChange={(event) => setAssetId(event.target.value)}>{tokenized.assets.map((row) => <option key={row.id} value={row.id}>{row.symbol} · {row.name}</option>)}</select></label>
         {asset && <div><span>Supply</span><strong>{finite(asset.totalSupply) ? `${compact.format(asset.totalSupply)} ${asset.symbol}` : 'Unavailable'}</strong><TokenizedFieldStatus row={asset} field="totalSupply" /></div>}
@@ -1160,20 +1205,18 @@ function LendingPage({ data, range, custom, setRange, setCustom, onInfo }) {
   return (
     <>
       <PageTitle title="Lending" description="Source-backed lending balances, rates, coverage, and dated liquidation observations on Avalanche." data={data} />
-      <Timeframe range={range} setRange={setRange} custom={custom} setCustom={setCustom} />
-      <div className="kpi-grid four">
+      <div className="kpi-grid four lending-kpis">
         <Kpi label="Tracked Gross Supply" value={lending.kpis.totalSuppliedUsd} note="Eligible priced claims; coverage below, not chain-wide TVL" metric="lending_market_size" onInfo={onInfo} />
         <Kpi label="Tracked Borrowed" value={lending.kpis.totalBorrowedUsd} metric="lending_borrowed" onInfo={onInfo} />
         <Kpi label="Protocol Net TVL" value={lending.kpis.netTvlUsd} note={`DeFiLlama ${lending.referenceLlama?.protocols?.length || 0}-family reference · fetched ${dateTimeLabel(lending.referenceLlama?.observedAt)}`} metric="lending_market_size" onInfo={onInfo} />
         <Kpi label="Tracked Liquid Cash" value={lending.kpis.availableLiquidityUsd} note="Source liquidity; not guaranteed borrow or withdrawal capacity" metric="lending_available_liquidity" onInfo={onInfo} />
         {hasVaultInventory && <Kpi label="Factory Vault Assets" value={lending.kpis.factoryVaultAssetsUsd} note={`${vaultAvailability}: gross, non-additive`} metric="lending_vault_tvl" onInfo={onInfo} />}
-      </div>
-      <div className="kpi-grid four">
         {hasVaultInventory && <Kpi label="Active Factory Vaults" value={vaultSummary.activeVaults} unit="contracts" note={finite(vaultSummary.totalVaults) ? `${vaultSummary.totalVaults} factory children discovered` : 'Canonical vault inventory unavailable'} icon={Landmark} metric="lending_vault_tvl" onInfo={onInfo} />}
         {hasVaultInventory && <Kpi label="Priced Active Vaults" value={vaultSummary.pricedActiveVaults} unit="contracts" note={finite(vaultSummary.unpricedActiveVaults) ? `${vaultSummary.unpricedActiveVaults} remain unvalued` : 'Canonical pricing coverage unavailable'} icon={ShieldCheck} metric="lending_vault_tvl" onInfo={onInfo} />}
         <Kpi label="Observed Liquidations · Retained Window" value={lending.kpis.liquidations30d} unit="events" note={`${liquidationAvailability}: contract events`} icon={Activity} metric="lending_liquidations" onInfo={onInfo} />
         <Kpi label="Observed Debt · Retained Window" value={lending.kpis.liquidationDebtRepaidUsd30d} note="Partial coverage · end-of-day token price estimates" icon={CircleDollarSign} metric="lending_liquidations" onInfo={onInfo} />
       </div>
+      <Timeframe range={range} setRange={setRange} custom={custom} setCustom={setCustom} />
       <ChartPanel title="Reference lending aggregates over time" subtitle={`DeFiLlama retained ${lending.historyCoverage?.families?.length || 0}-family history, not native totals. Net TVL and debt are independent source fields.`} data={lending.history} series={[{ key: 'netTvl', name: 'Net TVL' }, { key: 'borrowed', name: 'Borrowed' }]} range={range} custom={custom} type="line" metric="lending_market_size" onInfo={onInfo} />
       {sourceHistories.length > 0 && <>
         <div className="filter-bar"><label>Source history<select aria-label="Lending source history" value={historyIndex} onChange={(event) => setHistoryIndex(event.target.value)}>{sourceHistories.map((item, index) => <option key={index} value={String(index)}>{item.protocol} · {item.siloId || item.accountingLevel || item.kind} · {item.rateBasis || 'USD balances'} · series {index + 1}</option>)}</select></label>{selectedHistory?.sourceUrl && <a href={selectedHistory.sourceUrl} target="_blank" rel="noreferrer">Historical source <ExternalLink size={13} /></a>}</div>
@@ -1190,12 +1233,6 @@ function LendingPage({ data, range, custom, setRange, setCustom, onInfo }) {
         { key: 'availability', label: 'State' },
         { key: 'source', label: 'Source', render: (value, row) => value ? <a href={value} target="_blank" rel="noreferrer">{row.sourceLabel || 'Source'} <ExternalLink size={13} /></a> : 'Unavailable' },
       ]} />
-      <div className="filter-bar">
-        <SlidersHorizontal size={16} />
-        <label>Protocol<select value={protocol} onChange={(event) => setProtocol(event.target.value)} aria-label="Lending protocol filter"><option value="all">All protocols</option>{lending.protocols.map((row) => <option key={row.slug} value={row.slug}>{row.name}</option>)}</select></label>
-        <label>Asset<input value={asset} onChange={(event) => setAsset(event.target.value)} placeholder="e.g. USDC or AVAX" aria-label="Lending asset filter" /></label>
-        <span>{markets.length} markets</span>
-      </div>
       <DataTable title="Source and Eligibility Coverage" subtitle="Queried deployments are not necessarily eligible or priced. Tracked subtotals are not a complete Avalanche lending census." rows={lending.marketCoverage || []} metric="lending_market_size" onInfo={onInfo} columns={[
         { key: 'protocol', label: 'Deployment' },
         { key: 'discovered', label: 'Discovered' },
@@ -1209,7 +1246,14 @@ function LendingPage({ data, range, custom, setRange, setCustom, onInfo }) {
         { key: 'limitation', label: 'Limitations', render: (value, row) => `${value || row.reason || row.sourceScope || row.scope || 'See source scope'}${row.failedConfigs?.length ? ` · ${row.failedConfigs.length} config requests failed` : ''}` },
         { key: 'sourceUrl', label: 'Source', render: (value, row) => value ? <a href={value} target="_blank" rel="noreferrer">{row.sourceLabel || 'Official source'} <ExternalLink size={13} /></a> : 'Unavailable' },
       ]} />
-      <DataTable title="Current Lending Markets" subtitle={`${marketAvailability} · ordinary markets only; excluded claims are not included in tracked headlines`} rows={markets} metric="lending_rates" onInfo={onInfo} columns={[
+      <div className="filter-bar lending-market-filters">
+        <SlidersHorizontal size={16} />
+        <strong>Current market filters</strong>
+        <label>Protocol<select value={protocol} onChange={(event) => setProtocol(event.target.value)} aria-label="Lending protocol filter"><option value="all">All protocols</option>{lending.protocols.map((row) => <option key={row.slug} value={row.slug}>{row.name}</option>)}</select></label>
+        <label>Asset<input value={asset} onChange={(event) => setAsset(event.target.value)} placeholder="e.g. USDC or AVAX" aria-label="Lending asset filter" /></label>
+        <span>{markets.length} markets</span>
+      </div>
+      <DataTable title="Current Lending Markets" subtitle={`${marketAvailability} · ordinary markets only; excluded claims are not included in tracked headlines`} rows={markets} rowKey={(row, index) => [row.protocol, row.marketName || row.name, row.symbol, row.address || row.marketAddress || index].join('::')} mobileEssentialKeys={['protocol', 'supplyRatePct', 'borrowRatePct', 'availableLiquidityUsd', 'riskState', 'freshness']} renderMobileRow={(row, columns) => <LendingMarketMobileCard row={row} columns={columns} />} metric="lending_rates" onInfo={onInfo} columns={[
         { key: 'protocol', label: 'Protocol', render: (value) => value.replaceAll('-', ' ') },
         { key: 'marketName', label: 'Market', render: (value, row) => value || row.name || row.symbol },
         { key: 'symbol', label: 'Asset' },
@@ -1225,7 +1269,7 @@ function LendingPage({ data, range, custom, setRange, setCustom, onInfo }) {
         { key: 'supplyRatePct', label: 'Supply Rate', render: (value) => formatValue(value, 'percent') },
         { key: 'incentiveApy', label: 'Incentive Rate', render: (value, row) => finite(value) ? `${formatValue(value, 'percent')} ${row.incentiveRateBasis || 'basis unreported'}` : 'Unavailable' },
         { key: 'borrowRatePct', label: 'Borrow Rate', render: (value) => formatValue(value, 'percent') },
-        { key: 'rateBasis', label: 'Basis', render: (value) => value || 'APY' },
+        { key: 'rateBasis', label: 'Basis', render: (value) => value || 'basis not reported' },
         { key: 'riskState', label: 'Risk', render: (value) => value || 'not classified' },
         { key: 'state', label: 'State', render: (value) => value || 'unknown' },
         { key: 'freshness', label: 'Freshness', render: (value, row) => value ? `${liveAgeSeconds(row) > (row.maxAgeSeconds || 900) ? 'stale' : value}${liveAgeSeconds(row) == null ? '' : ` · ${integer.format(liveAgeSeconds(row))}s`}` : 'adapter observation' },
@@ -1286,9 +1330,21 @@ function verificationValue(value, unit) {
 function VerificationPage({ data, onInfo }) {
   const verification = data.quality.verification;
   const [category, setCategory] = useState('all');
+  const [status, setStatus] = useState('all');
   const categories = [...new Set(verification.checks.map((check) => check.category))];
-  const checks = verification.checks.filter((check) => category === 'all' || check.category === category);
+  const statuses = [...new Set(verification.checks.map((check) => check.status))];
+  const checks = verification.checks.filter((check) =>
+    (category === 'all' || check.category === category)
+    && (status === 'all' || check.status === status));
   const sourceCatalog = new Map(data.quality.sourceCatalog.sources.map((source) => [source.id, source]));
+  const computedSummary = verification.checks.reduce((summary, check) => {
+    summary.total += 1;
+    if (check.status === 'context') summary.context += 1;
+    else if (check.status === 'unavailable') summary.unavailable += 1;
+    else { summary.scored += 1; if (check.status === 'pass') summary.pass += 1; else summary.review += 1; }
+    return summary;
+  }, { total: 0, scored: 0, pass: 0, context: 0, review: 0, unavailable: 0 });
+  const passRatePct = computedSummary.scored ? computedSummary.pass / computedSummary.scored * 100 : null;
   return (
     <>
       <PageTitle
@@ -1296,20 +1352,30 @@ function VerificationPage({ data, onInfo }) {
         description="Scope-aware parity checks against RWA.xyz, Avalanche’s official Metrics API, DefiLlama companion endpoints, and independent market data."
         data={data}
       />
-      <div className="kpi-grid four">
-        <Kpi label="Scored Checks" value={verification.summary.scored} unit="contracts" icon={ShieldCheck} metric="cross_source_verification" onInfo={onInfo} />
-        <Kpi label="Matched" value={verification.summary.pass} unit="contracts" note={`${decimal.format(verification.summary.passRatePct || 0)}% pass rate`} icon={Check} metric="cross_source_verification" onInfo={onInfo} />
-        <Kpi label="Different Scope" value={verification.summary.context} unit="contracts" note="Shown, never graded" icon={Info} metric="cross_source_verification" onInfo={onInfo} />
-        <Kpi label="Needs Review" value={verification.summary.review} unit="contracts" note={`${verification.summary.unavailable} unavailable`} icon={CircleAlert} metric="cross_source_verification" onInfo={onInfo} />
+      <div className="kpi-grid four verification-kpis">
+        <Kpi label="Scored Checks" value={computedSummary.scored} unit="contracts" note={`${computedSummary.total} total records`} icon={ShieldCheck} metric="cross_source_verification" onInfo={onInfo} />
+        <Kpi label="Matched" value={computedSummary.pass} unit="contracts" note={`${finite(passRatePct) ? decimal.format(passRatePct) : 'Unavailable'}% pass rate`} icon={Check} metric="cross_source_verification" onInfo={onInfo} />
+        <Kpi label="Different Scope" value={computedSummary.context} unit="contracts" note="Shown, never graded" icon={Info} metric="cross_source_verification" onInfo={onInfo} />
+        <Kpi label="Needs Review" value={computedSummary.review} unit="contracts" note="Scoped mismatches requiring review" icon={CircleAlert} metric="cross_source_verification" onInfo={onInfo} />
+        <Kpi label="Independent Peer Unavailable" value={computedSummary.unavailable} unit="contracts" note={`${computedSummary.total} total verification records`} icon={CircleAlert} metric="cross_source_verification" onInfo={onInfo} />
       </div>
       <CoverageNote title="Verification policy" detail={verification.policy.rule} />
       <CoverageNote title="Not covered by the scoped badge" detail={`${verification.policy.scopeDisclosure} Major excluded areas: ${verification.policy.excludedAreas.join(', ')}.`} />
-      <div className="verification-filter" role="group" aria-label="Verification category">
-        {['all', ...categories].map((item) => (
-          <button key={item} className={category === item ? 'active' : ''} onClick={() => setCategory(item)}>
-            {item === 'all' ? 'All checks' : item}
-          </button>
-        ))}
+      <div className="verification-filter-stack">
+        <div className="verification-filter" role="group" aria-label="Verification topic">
+          <span>Topic</span>{['all', ...categories].map((item) => (
+            <button key={item} aria-pressed={category === item} className={category === item ? 'active' : ''} onClick={() => setCategory(item)}>
+              {item === 'all' ? 'All topics' : item}
+            </button>
+          ))}
+        </div>
+        <div className="verification-filter" role="group" aria-label="Verification status">
+          <span>Status</span>{['all', ...statuses].map((item) => (
+            <button key={item} aria-pressed={status === item} className={status === item ? 'active' : ''} onClick={() => setStatus(item)}>
+              {item === 'all' ? 'All statuses' : VERIFICATION_LABELS[item] || item}
+            </button>
+          ))}
+        </div>
       </div>
       <section className="panel verification-ledger">
         <div className="panel-heading">
@@ -1321,11 +1387,11 @@ function VerificationPage({ data, onInfo }) {
         </div>
         <div className="verification-rows">
           {checks.map((check) => (
-            <article className={`verification-row ${check.status}`} key={check.id}>
-              <div className="verification-row-title">
+            <details className={`verification-row ${check.status}`} key={check.id}>
+              <summary className="verification-row-title">
                 <VerificationBadge status={check.status} />
                 <div><strong>{check.label}</strong><span>{check.scope}</span></div>
-              </div>
+              </summary>
               <div className="verification-number">
                 <span>{check.observed.label}</span>
                 <strong>{verificationValue(check.observed.value, check.unit)}</strong>
@@ -1345,7 +1411,7 @@ function VerificationPage({ data, onInfo }) {
                 <small>as of {check.comparator.sourceAsOf || 'unavailable'}</small>
               </div>
               <p>{check.note}</p>
-            </article>
+            </details>
           ))}
         </div>
       </section>
@@ -1388,10 +1454,48 @@ function SharedScopeDisclosure({ data }) {
   return <details className="scope-disclosure compact"><summary><CircleAlert size={15} /> Snapshot scope and global metadata warnings <ChevronDown size={14} /></summary><p>{data.quality.verification.policy.scopeDisclosure}</p>{warnings.length > 0 && <><p>These warnings apply to the shared snapshot metadata; no page-specific attribution is implied.</p><ul>{warnings.map((warning) => <li key={warning}>{warning}</li>)}</ul></>}</details>;
 }
 
+const PAGE_TASKS = {
+  overview: 'Start with scope, then compare headline capital and activity before opening detailed evidence.', beginners: 'Follow three steps: orient, inspect one live metric, then verify its methodology.',
+  experts: 'Choose a task group, open the destination, and confirm its source and observation window.', governance: 'Review proposal state, source-review date, potential impact, and the next official source action.',
+  unlocks: 'Separate past schedules from future events; a scheduled unlock is not proof of execution or sale.', staking: 'Check current official prerequisites first; estimates appear only when required source inputs exist.',
+  blockspace: 'Compare activity, cost, and failure measures using their stated units and coverage windows.', economics: 'Read available burn observations before unavailable supply fields; preserve each disclosure boundary.',
+  'spot-trading': 'Confirm the observation window, then sort source-backed leaders without treating missing data as zero.', 'tokenized-assets': 'Confirm the selected asset, units, exact-contract scope, and visible caveats before reading charts.',
+  lending: 'Filter protocol and asset near the comparison, then distinguish gross native balances from reference TVL.', verification: 'Filter by topic or status, then expand evidence; comparator values never replace canonical metrics.',
+};
+
+function PageJumpNav({ page }) {
+  const [headings, setHeadings] = useState([]);
+  useEffect(() => {
+    const root = document.querySelector('.dashboard-main');
+    const used = new Set([...document.querySelectorAll('[id]')].filter((node) => !root?.contains(node)).map((node) => node.id));
+    const labelledIds = new Set([...document.querySelectorAll('[aria-labelledby],[aria-describedby]')].flatMap((node) =>
+      ['aria-labelledby', 'aria-describedby'].flatMap((attribute) => (node.getAttribute(attribute) || '').split(/\s+/).filter(Boolean))
+    ));
+    const rows = [...(root?.querySelectorAll('h2') || [])].map((heading, index) => {
+      const base = heading.textContent.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || `section-${index + 1}`;
+      let id = heading.id;
+      if (!id) {
+        id = `section-${page}-${base}`;
+        let suffix = 2;
+        while (used.has(id)) id = `section-${page}-${base}-${suffix++}`;
+        heading.id = id;
+      }
+      used.add(id);
+      if (labelledIds.has(id)) heading.dataset.pageJumpPreserved = 'true';
+      return { id: heading.id, label: heading.textContent.trim().replace(/\s+/g, ' ') };
+    });
+    setHeadings(rows);
+  }, [page]);
+  return <nav className={`page-jump${page === 'beginners' ? ' page-jump-learning' : ''}`} aria-label={`${PAGES.find((item) => item.id === page)?.label || 'Page'} task summary and section links`}>
+    <details className="recommended-start"><summary>Recommended start</summary><p>{PAGE_TASKS[page]}</p></details>
+    {headings.length > 0 && <div className="page-jump-links"><label htmlFor={`page-section-${page}`}>On this page</label><select id={`page-section-${page}`} defaultValue="" onChange={(event) => { if (event.target.value) document.getElementById(event.target.value)?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}><option value="" disabled>Choose a section</option>{headings.map((heading) => <option key={heading.id} value={heading.id}>{heading.label}</option>)}</select><div className="page-jump-anchors">{headings.map((heading) => <a key={heading.id} href={`#${heading.id}`}>{heading.label}</a>)}</div></div>}
+  </nav>;
+}
+
 function PageTitle({ title, description, data }) {
   return (
     <div className="page-title">
-      <div><span className="eyebrow">AVALANCHE C-CHAIN</span><h1>{title}</h1><p>{description}</p></div>
+      <div><h1>{title}</h1><span className="eyebrow">AVALANCHE C-CHAIN</span><p>{description}</p></div>
       <div className="freshness"><span className={`pulse ${data.metadata.freshness === 'healthy' ? 'healthy' : 'degraded'}`} /><div><strong>{data.metadata.freshness === 'healthy' ? 'Daily snapshot available' : 'Snapshot coverage degraded'}</strong><span>Generated {new Date(data.generatedAt).toLocaleString('en-US', { timeZone: 'UTC', dateStyle: 'medium', timeStyle: 'short' })} UTC · data through {data.metadata.latestCompleteDate || 'not supplied'}</span></div></div>
     </div>
   );
@@ -1517,33 +1621,19 @@ function App() {
 
   useEffect(() => {
     let active = true;
-    const load = async (initial = false) => {
+    const load = async () => {
       try {
-        let response = await fetch(`${BASE}api/dashboard`, { cache: 'no-store' });
+        const response = await fetch(`${BASE}data/dashboard.json`, { cache: 'no-store' });
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const payload = await response.json();
-        if (active) {
-          setData(payload);
-          setError('');
-        }
+        if (active) { setData(payload); setError(''); }
       } catch (reason) {
-        try {
-          const response = await fetch(`${BASE}data/dashboard.json`, { cache: 'no-store' });
-          if (!response.ok) throw new Error(`HTTP ${response.status}`);
-          const payload = await response.json();
-          if (active) setData(payload);
-        } catch (fallbackError) {
-          if (active && initial) setError(fallbackError.message || reason.message);
-        }
+        if (active) setError(reason.message);
       }
     };
-    load(true);
-    const timer = window.setInterval(() => {
-      if (document.visibilityState === 'visible') load(false);
-    }, 60_000);
+    load();
     return () => {
       active = false;
-      window.clearInterval(timer);
     };
   }, []);
 
@@ -1641,8 +1731,9 @@ function App() {
       <Header page={page} setPage={setPage} data={data} live={live} liveReceipt={liveReceipt} onSearch={() => setSearch(true)} />
       <main className="dashboard-main">
         {liveError && page !== 'overview' && <div className="live-error" role="status"><CircleAlert size={14} /> {live ? 'Live refresh failed; last-known live values are stale. Audited snapshot remains active.' : 'Live pulse unavailable; audited snapshot remains active.'}</div>}
-        {page !== 'overview' && <SharedScopeDisclosure data={data} />}
+        <PageJumpNav page={page} />
         {pages[page]}
+        {page !== 'overview' && <SharedScopeDisclosure data={data} />}
       </main>
       <footer><Logo /><span>Auditable Avalanche C-Chain analytics</span><a href={`${BASE}api/catalog`}>Metric catalog <ExternalLink size={12} /></a><span>Schema {data.schema}</span></footer>
       {method && <MethodologyDialog id={method} metrics={data.quality.metricCatalog.metrics} onClose={() => setMethod(null)} />}
